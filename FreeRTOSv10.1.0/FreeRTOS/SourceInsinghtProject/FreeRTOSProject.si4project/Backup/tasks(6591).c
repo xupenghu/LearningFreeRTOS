@@ -3173,14 +3173,6 @@ void vTaskSwitchContext( void )
 	}
 }
 /*-----------------------------------------------------------*/
-/***********************************************************************
-* 函数名称： vTaskPlaceOnEventList
-* 函数功能： 将任务插入到事件列表中
-* 输入参数： pxEventList[IN]: 被插入的事件列表
-			 xTicksToWait[IN]: 阻塞时间 
-* 返 回 值： 无
-* 函数说明： 
-****************************************************************************/
 
 void vTaskPlaceOnEventList( List_t * const pxEventList, const TickType_t xTicksToWait )
 {
@@ -3193,9 +3185,8 @@ void vTaskPlaceOnEventList( List_t * const pxEventList, const TickType_t xTicksT
 	This is placed in the list in priority order so the highest priority task
 	is the first to be woken by the event.  The queue that contains the event
 	list is locked, preventing simultaneous access from interrupts. */
-	/* */
 	vListInsert( pxEventList, &( pxCurrentTCB->xEventListItem ) );
-	/* 将当前任务加入到延时列表中去 */
+
 	prvAddCurrentTaskToDelayedList( xTicksToWait, pdTRUE );
 }
 /*-----------------------------------------------------------*/

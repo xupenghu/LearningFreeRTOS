@@ -126,7 +126,7 @@ typedef struct QueueDef_t
 
 	#if ( configUSE_TRACE_FACILITY == 1 )
 		UBaseType_t uxQueueNumber;
-		uint8_t ucQueueType;	//消息队列的类型 
+		uint8_t ucQueueType;
 	#endif
 
 } xQUEUE;
@@ -515,27 +515,20 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength, const UBaseT
 /*-----------------------------------------------------------*/
 
 #if( configUSE_MUTEXES == 1 )
-	/***********************************************************************
-	* 函数名称： prvInitialiseMutex
-	* 函数功能： 互斥锁初始化
-	* 输入参数： pxNewQueue[IN]: 需要初始化的互斥锁结构体指针
-	* 返 回 值： 无
-	* 函数说明： 
-	****************************************************************************/
 
 	static void prvInitialiseMutex( Queue_t *pxNewQueue )
 	{
-		if( pxNewQueue != NULL )	//判断是否是合法互斥锁
+		if( pxNewQueue != NULL )
 		{
 			/* The queue create function will set all the queue structure members
 			correctly for a generic queue, but this function is creating a
 			mutex.  Overwrite those members that need to be set differently -
 			in particular the information required for priority inheritance. */
-			pxNewQueue->u.xSemaphore.xMutexHolder = NULL;	//互斥锁不上锁
-			pxNewQueue->uxQueueType = queueQUEUE_IS_MUTEX;	//消息队列类型设置为互斥锁
+			pxNewQueue->u.xSemaphore.xMutexHolder = NULL;
+			pxNewQueue->uxQueueType = queueQUEUE_IS_MUTEX;
 
 			/* In case this is a recursive mutex. */
-			pxNewQueue->u.xSemaphore.uxRecursiveCallCount = 0; //互斥量计数器 保存递归互斥量被获取的次数 当前做互斥锁使用 所以置0
+			pxNewQueue->u.xSemaphore.uxRecursiveCallCount = 0;
 
 			traceCREATE_MUTEX( pxNewQueue );
 
@@ -552,19 +545,12 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength, const UBaseT
 /*-----------------------------------------------------------*/
 
 #if( ( configUSE_MUTEXES == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
-	/***********************************************************************
-	* 函数名称： xQueueCreateMutex
-	* 函数功能： 创建互斥量
-	* 输入参数： ucQueueTypep[IN]: 创建类型 这里是互斥信号量或者是递归信号量
-	* 返 回 值： 无
-	* 函数说明： 创建成功返回信号量的句柄 创建失败返回NULL
-	****************************************************************************/
 
 	QueueHandle_t xQueueCreateMutex( const uint8_t ucQueueType )
 	{
 	QueueHandle_t xNewQueue;
 	const UBaseType_t uxMutexLength = ( UBaseType_t ) 1, uxMutexSize = ( UBaseType_t ) 0;
-		/* 调用通用消息队列创建函数创建 */
+
 		xNewQueue = xQueueGenericCreate( uxMutexLength, uxMutexSize, ucQueueType );
 		prvInitialiseMutex( ( Queue_t * ) xNewQueue );
 
@@ -777,14 +763,6 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength, const UBaseT
 /*-----------------------------------------------------------*/
 
 #if( ( configUSE_COUNTING_SEMAPHORES == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
-	/***********************************************************************
-	* 函数名称： xQueueCreateCountingSemaphore
-	* 函数功能： 创建计数信号量
-	* 输入参数： uxMaxCount[IN]: 计数最大值
-				 uxInitialCount[IN]:初始计数值
-	* 返 回 值： 创建成功返回消息队列的句柄，否则返回NULL
-	* 函数说明： 
-	****************************************************************************/
 
 	QueueHandle_t xQueueCreateCountingSemaphore( const UBaseType_t uxMaxCount, const UBaseType_t uxInitialCount )
 	{
@@ -792,12 +770,12 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength, const UBaseT
 
 		configASSERT( uxMaxCount != 0 );
 		configASSERT( uxInitialCount <= uxMaxCount );
-		/* 调用通用消息队列创建函数 */
+
 		xHandle = xQueueGenericCreate( uxMaxCount, queueSEMAPHORE_QUEUE_ITEM_LENGTH, queueQUEUE_TYPE_COUNTING_SEMAPHORE );
-		/* 如果创建成功*/
+
 		if( xHandle != NULL )
 		{
-			( ( Queue_t * ) xHandle )->uxMessagesWaiting = uxInitialCount;	//初始化初始计数值
+			( ( Queue_t * ) xHandle )->uxMessagesWaiting = uxInitialCount;
 
 			traceCREATE_COUNTING_SEMAPHORE();
 		}
@@ -849,12 +827,11 @@ Queue_t * const pxQueue = xQueue;
 			highest priority task wanting to access the queue.  If the head item
 			in the queue is to be overwritten then it does not matter if the
 			queue is full. */
-			/* 如果队列还有空间 或者是覆盖式投递 */
 			if( ( pxQueue->uxMessagesWaiting < pxQueue->uxLength ) || ( xCopyPosition == queueOVERWRITE ) )
 			{
 				traceQUEUE_SEND( pxQueue );
 
-				#if ( configUSE_QUEUE_SETS == 1 )	//队列集部分 后续注解
+				#if ( configUSE_QUEUE_SETS == 1 )
 				{
 				UBaseType_t uxPreviousMessagesWaiting = pxQueue->uxMessagesWaiting;
 
@@ -914,16 +891,14 @@ Queue_t * const pxQueue = xQueue;
 						}
 					}
 				}
-				#else /* configUSE_QUEUE_SETS 没有使用队列集*/
+				#else /* configUSE_QUEUE_SETS */
 				{
-					//完成队列拷贝工作 分为从队列首入队 从队列尾部入队或者是覆盖式入队
 					xYieldRequired = prvCopyDataToQueue( pxQueue, pvItemToQueue, xCopyPosition );
 
 					/* If there was a task waiting for data to arrive on the
 					queue then unblock it now. */
-					/* 如果有等待该消息的任务 则唤醒 */
 					if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToReceive ) ) == pdFALSE )
-					{	
+					{
 						if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToReceive ) ) != pdFALSE )
 						{
 							/* The unblocked task has a priority higher than
@@ -937,7 +912,7 @@ Queue_t * const pxQueue = xQueue;
 							mtCOVERAGE_TEST_MARKER();
 						}
 					}
-					else if( xYieldRequired != pdFALSE ) /* 如果没有等待此队列的任务 判断是否需要上下文切换*/
+					else if( xYieldRequired != pdFALSE )
 					{
 						/* This path is a special case that will only get
 						executed if the task was holding multiple mutexes and
@@ -955,9 +930,8 @@ Queue_t * const pxQueue = xQueue;
 				taskEXIT_CRITICAL();
 				return pdPASS;
 			}
-			else	/* 队列没有空间了 */
-			{	
-				/* 如果等待时间为0 则直接退出 返回错误码*/
+			else
+			{
 				if( xTicksToWait == ( TickType_t ) 0 )
 				{
 					/* The queue was full and no block time is specified (or
@@ -973,7 +947,6 @@ Queue_t * const pxQueue = xQueue;
 				{
 					/* The queue was full and a block time was specified so
 					configure the timeout structure. */
-					/* 队列满并且设置了超时时间，则配置超时结构体对象 */
 					vTaskInternalSetTimeOutState( &xTimeOut );
 					xEntryTimeSet = pdTRUE;
 				}
@@ -988,27 +961,16 @@ Queue_t * const pxQueue = xQueue;
 
 		/* Interrupts and other tasks can send to and receive from the queue
 		now the critical section has been exited. */
-			
-		/* 退出临界区,至此,中断和其它任务可以向这个队列执行入队(投递)或出队(读取)操作.
-		*因为队列满,任务无法入队,下面的代码将当前任务将阻塞在这个队列上,在这段代码执行过程中我们需要挂起调度器,
-		*防止其它任务操作队列事件列表;挂起调度器虽然可以禁止其它任务操作这个队列,
-		*但并不能阻止中断服务程序操作这个队列,因此还需要将队列上锁,防止中断程序读取队列后,
-		*使阻塞在出队操作其它任务解除阻塞,执行上下文切换(因为调度器挂起后,不允许执行上下文切换) */
 
-		vTaskSuspendAll();	//禁止调度器调度
-		prvLockQueue( pxQueue );	//队列上锁
+		vTaskSuspendAll();
+		prvLockQueue( pxQueue );
 
 		/* Update the timeout state to see if it has expired yet. */
-		/* 查看任务的超时时间是否到期 */
-		if( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) == pdFALSE ) //没有到期
+		if( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) == pdFALSE )
 		{
 			if( prvIsQueueFull( pxQueue ) != pdFALSE )
 			{
-				/* 超时时间未到期 队列依旧满 */
 				traceBLOCKING_ON_QUEUE_SEND( pxQueue );
-				/* 将任务事件列表项插入列表结构体成员xTaskWaitingToSend列表中 任务进入到延时列表中
-				*接下来任务不需要在本函数中继续浪费时间 直接执行上下文切换 
-				* 注意：这里的待入队数据在列表xTasksWaitingToSend中 在systick上下文中会检查任务等待是否超时*/
 				vTaskPlaceOnEventList( &( pxQueue->xTasksWaitingToSend ), xTicksToWait );
 
 				/* Unlocking the queue means queue events can effect the
@@ -1016,8 +978,6 @@ Queue_t * const pxQueue = xQueue;
 				remove this task from the event list again - but as the
 				scheduler is suspended the task will go onto the pending
 				ready last instead of the actual ready list. */
-				/* 解除队列锁,如果有任务要解除阻塞,则将任务移到挂起就绪列表中(因为当前调度器挂起,
-				*所以不能移到就绪列表)*/
 				prvUnlockQueue( pxQueue );
 
 				/* Resuming the scheduler will move tasks from the pending
@@ -1025,16 +985,14 @@ Queue_t * const pxQueue = xQueue;
 				task is already in a ready list before it yields - in which
 				case the yield will not cause a context switch unless there
 				is also a higher priority task in the pending ready list. */
-				/* 恢复调度器 将任务从挂起就绪列表恢复到就绪列表中*/
 				if( xTaskResumeAll() == pdFALSE )
 				{
 					portYIELD_WITHIN_API();
 				}
-				/*注意！！ 当延时到期后，函数会从此位置恢复执行，这个函数是一个for(;;)的死循环 所以会继续从头开始判断！！！*/
 			}
 			else
 			{
-				/* Try again. 队列有空闲 重试！*/
+				/* Try again. */
 				prvUnlockQueue( pxQueue );
 				( void ) xTaskResumeAll();
 			}
@@ -1042,7 +1000,6 @@ Queue_t * const pxQueue = xQueue;
 		else
 		{
 			/* The timeout has expired. */
-			/* 超时时间到期 队列任然满 接触调度锁 返回错误码 */
 			prvUnlockQueue( pxQueue );
 			( void ) xTaskResumeAll();
 
@@ -1095,9 +1052,8 @@ Queue_t * const pxQueue = xQueue;
 	read, instead return a flag to say whether a context switch is required or
 	not (i.e. has a task with a higher priority than us been woken by this
 	post). */
-	uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();	//进入临界区
-	{	
-		/* 如果队列还有空闲 或者是覆盖式入队*/
+	uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
+	{
 		if( ( pxQueue->uxMessagesWaiting < pxQueue->uxLength ) || ( xCopyPosition == queueOVERWRITE ) )
 		{
 			const int8_t cTxLock = pxQueue->cTxLock;
@@ -1109,14 +1065,13 @@ Queue_t * const pxQueue = xQueue;
 			in a task disinheriting a priority and prvCopyDataToQueue() can be
 			called here even though the disinherit function does not check if
 			the scheduler is suspended before accessing the ready lists. */
-			/* 完成数据拷贝工作 */
 			( void ) prvCopyDataToQueue( pxQueue, pvItemToQueue, xCopyPosition );
 
 			/* The event list is not altered if the queue is locked.  This will
 			be done when the queue is unlocked later. */
-			if( cTxLock == queueUNLOCKED ) //如果队列没有上锁
+			if( cTxLock == queueUNLOCKED )
 			{
-				#if ( configUSE_QUEUE_SETS == 1 ) //队列集 后续分析
+				#if ( configUSE_QUEUE_SETS == 1 )
 				{
 					if( pxQueue->pxQueueSetContainer != NULL )
 					{
@@ -1169,14 +1124,12 @@ Queue_t * const pxQueue = xQueue;
 				}
 				#else /* configUSE_QUEUE_SETS */
 				{
-					/* 如果有任务在此等待队列的到来 则将该任务解除阻塞 */
 					if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToReceive ) ) == pdFALSE )
 					{
 						if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToReceive ) ) != pdFALSE )
 						{
 							/* The task waiting has a higher priority so record that a
 							context	switch is required. */
-							/* 解除阻塞任务的优先级比当前任务的优先级高， 记录上下文切换请求 等中断服务程序返回后，显式强制上下文切换 */
 							if( pxHigherPriorityTaskWoken != NULL )
 							{
 								*pxHigherPriorityTaskWoken = pdTRUE;
@@ -1202,8 +1155,6 @@ Queue_t * const pxQueue = xQueue;
 			{
 				/* Increment the lock count so the task that unlocks the queue
 				knows that data was posted while it was locked. */
-				/*队列上锁,增加锁计数器,等到任务解除队列锁时,使用这个计数器就可以知道有多少数据入队,
-				 *可以最多解除多少个因等待从队列读数据而阻塞的任务 */
 				pxQueue->cTxLock = ( int8_t ) ( cTxLock + 1 );
 			}
 
@@ -1211,12 +1162,11 @@ Queue_t * const pxQueue = xQueue;
 		}
 		else
 		{
-			/* 队列满 返回错误码*/
 			traceQUEUE_SEND_FROM_ISR_FAILED( pxQueue );
 			xReturn = errQUEUE_FULL;
 		}
 	}
-	portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );   //退出临界区
+	portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
 
 	return xReturn;
 }
