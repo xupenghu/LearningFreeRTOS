@@ -159,6 +159,14 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * \ingroup Semaphores
  */
 #if( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
+	/***********************************************************************
+	* 函数名称： xSemaphoreCreateBinary
+	* 函数功能： 创建一个二值信号量
+	* 输入参数： 无
+	* 返 回 值： 成功创建返回信号量的句柄，失败则返回NULL
+	* 函数说明： 这是对一个队列表项为1的队列创建的重新封装
+	****************************************************************************/
+
 	#define xSemaphoreCreateBinary() xQueueGenericCreate( ( UBaseType_t ) 1, semSEMAPHORE_QUEUE_ITEM_LENGTH, queueQUEUE_TYPE_BINARY_SEMAPHORE )
 #endif
 
@@ -286,6 +294,14 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * \defgroup xSemaphoreTake xSemaphoreTake
  * \ingroup Semaphores
  */
+ 	/***********************************************************************
+	* 函数名称： xSemaphoreTake
+	* 函数功能： 获取信号量
+	* 输入参数： xSemaphore[IN]: 信号量句柄
+				 xBlockTime[IN]: 阻塞时间
+	* 返 回 值： 成功获取返回pdTRUE 否则返回pdFALSE
+	* 函数说明： 获取信号量。信号量必须是通过API函数xSemaphoreCreateBinary()、xSemaphoreCreateCounting()和xSemaphoreCreateMutex()预先创建过的。注意，递归互斥量类型信号量不能使用该函数、不用在中断服务程序中使用该函数。 
+	****************************************************************************/
 #define xSemaphoreTake( xSemaphore, xBlockTime )		xQueueSemaphoreTake( ( xSemaphore ), ( xBlockTime ) )
 
 /**
@@ -713,6 +729,14 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * \ingroup Semaphores
  */
 #if( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
+	/***********************************************************************
+	* 函数名称： xSemaphoreCreateMutex
+	* 函数功能： 创建互斥信号量
+	* 输入参数：      无
+	* 返 回 值： 创建成功返回互斥信号量的句柄 否则返回NULL
+	* 函数说明： 互斥信号量会有优先级继承 
+	****************************************************************************/
+
 	#define xSemaphoreCreateMutex() xQueueCreateMutex( queueQUEUE_TYPE_MUTEX )
 #endif
 
@@ -995,6 +1019,15 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * \ingroup Semaphores
  */
 #if( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
+	/***********************************************************************
+	* 函数名称： xSemaphoreCreateCounting
+	* 函数功能： 创建一个计数信号量
+	* 输入参数： uxMaxCount[IN]: 最大计数值，超过该值后计数值不再增长
+				 uxInitialCount[IN]: 初始化计数值
+	* 返 回 值： 创建成功返回该信号量的句柄 创建失败则返回NULL
+	* 函数说明： 该函数最终还是调用队列创建函数
+	****************************************************************************/
+
 	#define xSemaphoreCreateCounting( uxMaxCount, uxInitialCount ) xQueueCreateCountingSemaphore( ( uxMaxCount ), ( uxInitialCount ) )
 #endif
 
@@ -1095,6 +1128,13 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * \defgroup vSemaphoreDelete vSemaphoreDelete
  * \ingroup Semaphores
  */
+ 	/***********************************************************************
+	* 函数名称： vSemaphoreDelete
+	* 函数功能： 删除信号量
+	* 输入参数：      xSemaphore[IN]: 信号量句柄
+	* 返 回 值： 无
+	* 函数说明： 删除信号量。如果有任务阻塞在这个信号量上，则这个信号量不要删除。
+	****************************************************************************/
 #define vSemaphoreDelete( xSemaphore ) vQueueDelete( ( QueueHandle_t ) ( xSemaphore ) )
 
 /**

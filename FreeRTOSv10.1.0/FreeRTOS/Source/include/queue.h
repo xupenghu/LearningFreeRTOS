@@ -62,17 +62,17 @@ typedef struct QueueDef_t * QueueSetHandle_t;
 typedef struct QueueDef_t * QueueSetMemberHandle_t;
 
 /* For internal use only. */
-#define	queueSEND_TO_BACK		( ( BaseType_t ) 0 )
-#define	queueSEND_TO_FRONT		( ( BaseType_t ) 1 )
-#define queueOVERWRITE			( ( BaseType_t ) 2 )
+#define	queueSEND_TO_BACK		( ( BaseType_t ) 0 )	//向队列尾部投递
+#define	queueSEND_TO_FRONT		( ( BaseType_t ) 1 )	//向队列首部投递
+#define queueOVERWRITE			( ( BaseType_t ) 2 )	//向队列尾部覆盖投递
 
 /* For internal use only.  These definitions *must* match those in queue.c. */
 #define queueQUEUE_TYPE_BASE				( ( uint8_t ) 0U )
 #define queueQUEUE_TYPE_SET					( ( uint8_t ) 0U )
-#define queueQUEUE_TYPE_MUTEX 				( ( uint8_t ) 1U )
-#define queueQUEUE_TYPE_COUNTING_SEMAPHORE	( ( uint8_t ) 2U )
-#define queueQUEUE_TYPE_BINARY_SEMAPHORE	( ( uint8_t ) 3U )
-#define queueQUEUE_TYPE_RECURSIVE_MUTEX		( ( uint8_t ) 4U )
+#define queueQUEUE_TYPE_MUTEX 				( ( uint8_t ) 1U )	//互斥信号量
+#define queueQUEUE_TYPE_COUNTING_SEMAPHORE	( ( uint8_t ) 2U )	//计数信号量
+#define queueQUEUE_TYPE_BINARY_SEMAPHORE	( ( uint8_t ) 3U )	//二值信号量
+#define queueQUEUE_TYPE_RECURSIVE_MUTEX		( ( uint8_t ) 4U )	//递归信号量
 
 /**
  * queue. h

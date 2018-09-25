@@ -66,14 +66,14 @@ being used for. */
 
 typedef struct QueuePointers
 {
-	int8_t *pcTail;					/*< Points to the byte at the end of the queue storage area.  Once more byte is allocated than necessary to store the queue items, this is used as a marker. */
-	int8_t *pcReadFrom;				/*< Points to the last place that a queued item was read from when the structure is used as a queue. */
+	int8_t *pcTail;					/* 指向队列存储区末尾的字节。 分配的字节多于存储队列项所需的字节数，将其用作标记。< Points to the byte at the end of the queue storage area.  Once more byte is allocated than necessary to store the queue items, this is used as a marker. */
+	int8_t *pcReadFrom;				/* 当结构体用于队列时，这个字段指向出队项目中的最后一个 < Points to the last place that a queued item was read from when the structure is used as a queue. */
 } QueuePointers_t;
 
 typedef struct SemaphoreData
 {
-	TaskHandle_t xMutexHolder;		 /*< The handle of the task that holds the mutex. */
-	UBaseType_t uxRecursiveCallCount;/*< Maintains a count of the number of times a recursive mutex has been recursively 'taken' when the structure is used as a mutex. */
+	TaskHandle_t xMutexHolder;		 /* 保存互斥锁的任务的句柄 < The handle of the task that holds the mutex. */
+	UBaseType_t uxRecursiveCallCount;/* 当结构体用于互斥量时,用作计数器,保存递归互斥量被"获取"的次数. */< Maintains a count of the number of times a recursive mutex has been recursively 'taken' when the structure is used as a mutex. */
 } SemaphoreData_t;
 
 /* Semaphores do not actually store or copy data, so have an item size of
@@ -93,27 +93,28 @@ zero. */
  * Definition of the queue used by the scheduler.
  * Items are queued by copy, not reference.  See the following link for the
  * rationale: https://www.freertos.org/Embedded-RTOS-Queues.html
+ * 队列数据结构 队列的实现是基于拷贝 不是引用
  */
 typedef struct QueueDef_t
 {
-	int8_t *pcHead;					/*< Points to the beginning of the queue storage area. */
-	int8_t *pcWriteTo;				/*< Points to the free next place in the storage area. */
+	int8_t *pcHead;					/*指向队列存储区的起始位置，即第一个队列项 < Points to the beginning of the queue storage area. */
+	int8_t *pcWriteTo;				/*指向队列存储区的下一个可写位置 < Points to the free next place in the storage area. */
 
 	union
 	{
-		QueuePointers_t xQueue;		/*< Data required exclusively when this structure is used as a queue. */
-		SemaphoreData_t xSemaphore; /*< Data required exclusively when this structure is used as a semaphore. */
+		QueuePointers_t xQueue;		/* 当此结构体用作队列时的数据 < Data required exclusively when this structure is used as a queue. */
+		SemaphoreData_t xSemaphore; /* 当此结构体用作信号量时的数据 < Data required exclusively when this structure is used as a semaphore. */
 	} u;
 
-	List_t xTasksWaitingToSend;		/*< List of tasks that are blocked waiting to post onto this queue.  Stored in priority order. */
-	List_t xTasksWaitingToReceive;	/*< List of tasks that are blocked waiting to read from this queue.  Stored in priority order. */
+	List_t xTasksWaitingToSend;		/* 因为等待入队而阻塞的列表 按照优先级顺序存储 < List of tasks that are blocked waiting to post onto this queue.  Stored in priority order. */
+	List_t xTasksWaitingToReceive;	/* 因为等待队列项而阻塞的列表 按照优先级顺序存储 < List of tasks that are blocked waiting to read from this queue.  Stored in priority order. */
 
-	volatile UBaseType_t uxMessagesWaiting;/*< The number of items currently in the queue. */
-	UBaseType_t uxLength;			/*< The length of the queue defined as the number of items it will hold, not the number of bytes. */
-	UBaseType_t uxItemSize;			/*< The size of each items that the queue will hold. */
+	volatile UBaseType_t uxMessagesWaiting;/* 当前队列的队列项数目 < The number of items currently in the queue. */
+	UBaseType_t uxLength;			/* 队列项的长度 < The length of the queue defined as the number of items it will hold, not the number of bytes. */
+	UBaseType_t uxItemSize;			/* 每个队列项的大小 < The size of each items that the queue will hold. */
 
-	volatile int8_t cRxLock;		/*< Stores the number of items received from the queue (removed from the queue) while the queue was locked.  Set to queueUNLOCKED when the queue is not locked. */
-	volatile int8_t cTxLock;		/*< Stores the number of items transmitted to the queue (added to the queue) while the queue was locked.  Set to queueUNLOCKED when the queue is not locked. */
+	volatile int8_t cRxLock;		/* 队列上锁后,存储从队列收到的列表项数目，如果队列没有上锁，设置为queueUNLOCKED < Stores the number of items received from the queue (removed from the queue) while the queue was locked.  Set to queueUNLOCKED when the queue is not locked. */
+	volatile int8_t cTxLock;		/* 队列上锁后,存储发送到队列的列表项数目，如果队列没有上锁，设置为queueUNLOCKED < Stores the number of items transmitted to the queue (added to the queue) while the queue was locked.  Set to queueUNLOCKED when the queue is not locked. */
 
 	#if( ( configSUPPORT_STATIC_ALLOCATION == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
 		uint8_t ucStaticallyAllocated;	/*< Set to pdTRUE if the memory used by the queue was statically allocated to ensure no attempt is made to free the memory. */
@@ -251,6 +252,15 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength, const UBaseT
 	}														\
 	taskEXIT_CRITICAL()
 /*-----------------------------------------------------------*/
+/***********************************************************************
+* 函数名称： xQueueGenericReset
+* 函数功能： 复位队列
+* 输入参数： xQueue[IN]:需要复位的队列
+			 xNewQueue[IN]: pdTRUE:是新创建的队列
+			 				pdFALSE:不是新创建的队列
+* 返 回 值： 无
+* 函数说明： 这个函数是复位队列中的成员项的
+****************************************************************************/
 
 BaseType_t xQueueGenericReset( QueueHandle_t xQueue, BaseType_t xNewQueue )
 {
@@ -258,24 +268,31 @@ Queue_t * const pxQueue = xQueue;
 
 	configASSERT( pxQueue );
 
-	taskENTER_CRITICAL();
+	taskENTER_CRITICAL(); //进入临界区
 	{
+		/* 队列存储区结束后的下一个字节 */
 		pxQueue->u.xQueue.pcTail = pxQueue->pcHead + ( pxQueue->uxLength * pxQueue->uxItemSize ); /*lint !e9016 Pointer arithmetic allowed on char types, especially when it assists conveying intent. */
+		/* 当前队列的队列项数目*/
 		pxQueue->uxMessagesWaiting = ( UBaseType_t ) 0U;
+		/* 下一个需要写入的位置设置为存储区的头部 */
 		pxQueue->pcWriteTo = pxQueue->pcHead;
+		/* 用于队列时，指向出队项目的最后一个 */
 		pxQueue->u.xQueue.pcReadFrom = pxQueue->pcHead + ( ( pxQueue->uxLength - 1U ) * pxQueue->uxItemSize ); /*lint !e9016 Pointer arithmetic allowed on char types, especially when it assists conveying intent. */
+		/* 读写默认都不上锁*/
 		pxQueue->cRxLock = queueUNLOCKED;
 		pxQueue->cTxLock = queueUNLOCKED;
 
-		if( xNewQueue == pdFALSE )
+		if( xNewQueue == pdFALSE )	//如果不是新创建的队列
 		{
 			/* If there are tasks blocked waiting to read from the queue, then
 			the tasks will remain blocked as after this function exits the queue
 			will still be empty.  If there are tasks blocked waiting to write to
 			the queue, then one should be unblocked as after this function exits
 			it will be possible to write to it. */
+			/* 如果因为等待而入队的列表不为空 */
 			if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToSend ) ) == pdFALSE )
 			{
+				/* 移除该列表 */
 				if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToSend ) ) != pdFALSE )
 				{
 					queueYIELD_IF_USING_PREEMPTION();
@@ -290,14 +307,14 @@ Queue_t * const pxQueue = xQueue;
 				mtCOVERAGE_TEST_MARKER();
 			}
 		}
-		else
+		else	//如果是新创建的队列
 		{
 			/* Ensure the event queues start in the correct state. */
-			vListInitialise( &( pxQueue->xTasksWaitingToSend ) );
-			vListInitialise( &( pxQueue->xTasksWaitingToReceive ) );
+			vListInitialise( &( pxQueue->xTasksWaitingToSend ) );	//初始化应为等待入队而阻塞的列表
+			vListInitialise( &( pxQueue->xTasksWaitingToReceive ) );//初始化因为等待队列而阻塞的列表
 		}
 	}
-	taskEXIT_CRITICAL();
+	taskEXIT_CRITICAL();	//退出临界区
 
 	/* A value is returned for calling semantic consistency with previous
 	versions. */
@@ -364,24 +381,40 @@ Queue_t * const pxQueue = xQueue;
 /*-----------------------------------------------------------*/
 
 #if( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
+	/***********************************************************************
+	* 函数名称： xQueueGenericCreate
+	* 函数功能： 创建队列
+	* 输入参数： uxQueueLength[IN]: 队列项数目
+				 uxItemSize[IN]: 每个队列项大小，单位是字节。队列项通过拷贝入队而不是通过引用入队，因此需要队列项的大小。每个队列项的大小必须相同。
+				 ucQueueType[IN]: 队列类型，信号量也是基于队列实现的，所以这个函数可以创建所有的基于队列实现的任务,可能的类型如下：
+				 queueQUEUE_TYPE_BASE：表示队列
+				 queueQUEUE_TYPE_SET：表示队列集合
+				 queueQUEUE_TYPE_MUTEX：表示互斥量
+				 queueQUEUE_TYPE_COUNTING_SEMAPHORE：表示计数信号量
+				 queueQUEUE_TYPE_BINARY_SEMAPHORE：表示二进制信号量
+			     queueQUEUE_TYPE_RECURSIVE_MUTEX	：表示递归互斥量
+	* 返 回 值： 成功创建队列返回队列句柄，否自返回0。
+	* 函数说明： 这是一个通用的队列创建函数，具体的队列创建参考queue.h中的宏定义
+	****************************************************************************/
 
 	QueueHandle_t xQueueGenericCreate( const UBaseType_t uxQueueLength, const UBaseType_t uxItemSize, const uint8_t ucQueueType )
 	{
-	Queue_t *pxNewQueue;
-	size_t xQueueSizeInBytes;
-	uint8_t *pucQueueStorage;
+	Queue_t *pxNewQueue;		//指向一个新队列
+	size_t xQueueSizeInBytes;	//创建队列需要的字节数
+	uint8_t *pucQueueStorage;	//队列数据区指针
 
-		configASSERT( uxQueueLength > ( UBaseType_t ) 0 );
-
+		configASSERT( uxQueueLength > ( UBaseType_t ) 0 );	//断言 如果队列长度小于0 直接报错
+		//如果队列项=0
 		if( uxItemSize == ( UBaseType_t ) 0 )
 		{
 			/* There is not going to be a queue storage area. */
-			xQueueSizeInBytes = ( size_t ) 0;
+			xQueueSizeInBytes = ( size_t ) 0;	//不申请队列存储空间
 		}
-		else
+		else	//否则队列项>0
 		{
 			/* Allocate enough space to hold the maximum number of items that
 			can be in the queue at any time. */
+			/* 确保队列获得足够的内存空间 首先要将队列需要的空间转换成字节数 */
 			xQueueSizeInBytes = ( size_t ) ( uxQueueLength * uxItemSize ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
 		}
 
@@ -394,12 +427,14 @@ Queue_t * const pxQueue = xQueue;
 		are greater than or equal to the pointer to char requirements the cast
 		is safe.  In other cases alignment requirements are not strict (one or
 		two bytes). */
+		/* 向内存申请一个新队列           包括队列结构体空间和队列项占用的空间                   */
 		pxNewQueue = ( Queue_t * ) pvPortMalloc( sizeof( Queue_t ) + xQueueSizeInBytes ); /*lint !e9087 !e9079 see comment above. */
-
+		/* 如果申请成功 */
 		if( pxNewQueue != NULL )
 		{
 			/* Jump past the queue structure to find the location of the queue
 			storage area. */
+			/* 找到队列数据区首地址 */
 			pucQueueStorage = ( uint8_t * ) pxNewQueue;
 			pucQueueStorage += sizeof( Queue_t ); /*lint !e9016 Pointer arithmetic allowed on char types, especially when it assists conveying intent. */
 
@@ -408,13 +443,13 @@ Queue_t * const pxQueue = xQueue;
 				/* Queues can be created either statically or dynamically, so
 				note this task was created dynamically in case it is later
 				deleted. */
-				pxNewQueue->ucStaticallyAllocated = pdFALSE;
+				pxNewQueue->ucStaticallyAllocated = pdFALSE;	//动态创建标志清零
 			}
 			#endif /* configSUPPORT_STATIC_ALLOCATION */
-
+			//初始化新队列
 			prvInitialiseNewQueue( uxQueueLength, uxItemSize, pucQueueStorage, ucQueueType, pxNewQueue );
 		}
-		else
+		else	//申请失败
 		{
 			traceQUEUE_CREATE_FAILED( ucQueueType );
 			mtCOVERAGE_TEST_MARKER();
@@ -423,38 +458,49 @@ Queue_t * const pxQueue = xQueue;
 		return pxNewQueue;
 	}
 
-#endif /* configSUPPORT_STATIC_ALLOCATION */
+#endif /* configSUPPORT_DYNAMIC_ALLOCATION */
 /*-----------------------------------------------------------*/
+/***********************************************************************
+* 函数名称： prvInitialiseNewQueue
+* 函数功能： 初始化一个新队列
+* 输入参数： uxQueueLength[IN]:队列数目
+			 uxItemSize[IN]:每个队列项大小 单位是字节
+			 pucQueueStorage[IN]:指向队列的存储空间
+			 ucQueueType[IN]:要创建的队列的类型
+			 pxNewQueue[OUT]:需要被初始化的队列
+* 返 回 值： 无
+* 函数说明： 这是一个队列的初始化函数 主要完成队列内部数据的初始化
+****************************************************************************/
 
 static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength, const UBaseType_t uxItemSize, uint8_t *pucQueueStorage, const uint8_t ucQueueType, Queue_t *pxNewQueue )
 {
 	/* Remove compiler warnings about unused parameters should
 	configUSE_TRACE_FACILITY not be set to 1. */
-	( void ) ucQueueType;
-
+	( void ) ucQueueType;	//消除编译器警告
+	/* 如果没有队列项 */
 	if( uxItemSize == ( UBaseType_t ) 0 )
 	{
 		/* No RAM was allocated for the queue storage area, but PC head cannot
 		be set to NULL because NULL is used as a key to say the queue is used as
 		a mutex.  Therefore just set pcHead to point to the queue as a benign
 		value that is known to be within the memory map. */
-		pxNewQueue->pcHead = ( int8_t * ) pxNewQueue;
+		pxNewQueue->pcHead = ( int8_t * ) pxNewQueue;	//队列存储区起始位置为它自己
 	}
-	else
+	else	/* 有队列项 */
 	{
 		/* Set the head to the start of the queue storage area. */
-		pxNewQueue->pcHead = ( int8_t * ) pucQueueStorage;
+		pxNewQueue->pcHead = ( int8_t * ) pucQueueStorage;	//队列存储区起始位置指向队列的数据区
 	}
 
 	/* Initialise the queue members as described where the queue type is
 	defined. */
-	pxNewQueue->uxLength = uxQueueLength;
-	pxNewQueue->uxItemSize = uxItemSize;
+	pxNewQueue->uxLength = uxQueueLength;	//队列数目
+	pxNewQueue->uxItemSize = uxItemSize;	//队列项数目
 	( void ) xQueueGenericReset( pxNewQueue, pdTRUE );
 
 	#if ( configUSE_TRACE_FACILITY == 1 )
 	{
-		pxNewQueue->ucQueueType = ucQueueType;
+		pxNewQueue->ucQueueType = ucQueueType;	//队列类型
 	}
 	#endif /* configUSE_TRACE_FACILITY */
 
@@ -743,6 +789,16 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength, const UBaseT
 
 #endif /* ( ( configUSE_COUNTING_SEMAPHORES == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) ) */
 /*-----------------------------------------------------------*/
+/***********************************************************************
+* 函数名称： xQueueGenericSend
+* 函数功能： 向队列投递队列项
+* 输入参数： xQueue[IN]: 队列句柄
+			 pvItemToQueue[IN]: 指针，指向要入队的项目。要保存到队列中的项目字节数在队列创建时就已确定。因此要从指针pvItemToQueue指向的区域拷贝到队列存储区域的字节数，也已确定。
+			 xTicksToWait[IN]: 如果队列满，任务等待队列空闲的最大时间。如果队列满并且xTicksToWait被设置成0，函数立刻返回。时间单位为系统节拍时钟周期，因此宏portTICK_PERIOD_MS可以用来辅助计算真实延时值。如果INCLUDE_vTaskSuspend设置成1，并且指定延时为portMAX_DELAY将引起任务无限阻塞（没有超时）。
+			 xCopyPosition[IN]: 拷贝位置 向队列尾部投递或向队列首部投递
+* 返 回 值： 队列项入队成功返回pdTRUE，否则返回errQUEUE_FULL。
+* 函数说明： 这是一个通用的队列投递函数，具体的函数实现参考queue.h中的宏定义
+****************************************************************************/
 
 BaseType_t xQueueGenericSend( QueueHandle_t xQueue, const void * const pvItemToQueue, TickType_t xTicksToWait, const BaseType_t xCopyPosition )
 {
@@ -953,6 +1009,17 @@ Queue_t * const pxQueue = xQueue;
 	} /*lint -restore */
 }
 /*-----------------------------------------------------------*/
+/***********************************************************************
+* 函数名称： xQueueGenericSendFromISR
+* 函数功能： 向队列投递队列项（带中断保护）
+* 输入参数： xQueue[IN]: 队列句柄
+			 pvItemToQueue[IN]: 指针，指向要入队的项目。要保存到队列中的项目字节数在队列创建时就已确定。因此要从指针pvItemToQueue指向的区域拷贝到队列存储区域的字节数，也已确定。
+			 xTicksToWait[IN]: 如果队列满，任务等待队列空闲的最大时间。如果队列满并且xTicksToWait被设置成0，函数立刻返回。时间单位为系统节拍时钟周期，因此宏portTICK_PERIOD_MS可以用来辅助计算真实延时值。如果INCLUDE_vTaskSuspend设置成1，并且指定延时为portMAX_DELAY将引起任务无限阻塞（没有超时）。
+			 xCopyPosition[IN]: 拷贝位置 向队列尾部投递 或 向队列首部投递
+			 pxHigherPriorityTaskWoken[OUT]: 如果入队导致一个任务解锁，并且解锁的任务优先级高于当前运行的任务，则该函数将*pxHigherPriorityTaskWoken设置成pdTRUE。如果xQueueSendFromISR()设置这个值为pdTRUE，则中断退出前需要一次上下文切换。从FreeRTOS V7.3.0起，pxHigherPriorityTaskWoken称为一个可选参数，并可以设置为NULL。
+* 返 回 值： 队列项入队成功返回pdTRUE，否则返回errQUEUE_FULL。
+* 函数说明： 这是一个通用的队列投递函数，具体的函数实现参考queue.h中的宏定义 
+****************************************************************************/
 
 BaseType_t xQueueGenericSendFromISR( QueueHandle_t xQueue, const void * const pvItemToQueue, BaseType_t * const pxHigherPriorityTaskWoken, const BaseType_t xCopyPosition )
 {
@@ -1269,6 +1336,15 @@ Queue_t * const pxQueue = xQueue;
 	return xReturn;
 }
 /*-----------------------------------------------------------*/
+/***********************************************************************
+* 函数名称： xQueueReceive
+* 函数功能： 读取并移除一个队列项
+* 输入参数：      xQueue[IN]: 队列句柄
+			 pvBuffer[IN]: 接收队列列表项的缓冲区
+			 xTicksToWait[IN]: 要接收的项目队列为空时，允许任务最大阻塞时间。如果设置该参数为0，则表示即队列为空也立即返回。阻塞时间的单位是系统节拍周期，宏portTICK_RATE_MS可辅助计算真实阻塞时间。如果INCLUDE_vTaskSuspend设置成1，并且阻塞时间设置成portMAX_DELAY，将会引起任务无限阻塞（不会有超时）。
+* 返 回 值： 成功接收到列表项返回pdTRUE，否则返回pdFALSE。
+* 函数说明： 
+****************************************************************************/
 
 BaseType_t xQueueReceive( QueueHandle_t xQueue, void * const pvBuffer, TickType_t xTicksToWait )
 {
@@ -1628,6 +1704,15 @@ Queue_t * const pxQueue = xQueue;
 	} /*lint -restore */
 }
 /*-----------------------------------------------------------*/
+/***********************************************************************
+* 函数名称： xQueuePeek
+* 函数功能： 读取队列数据项但是不移除数据项
+* 输入参数：      xQueue[IN]: 队列句柄
+			 pvBuffer[IN]: 接收队列列表项的缓冲区
+			 xTicksToWait[IN]: 要接收的项目队列为空时，允许任务最大阻塞时间。如果设置该参数为0，则表示即队列为空也立即返回。阻塞时间的单位是系统节拍周期，宏portTICK_RATE_MS可辅助计算真实阻塞时间。如果INCLUDE_vTaskSuspend设置成1，并且阻塞时间设置成portMAX_DELAY，将会引起任务无限阻塞（不会有超时）。
+* 返 回 值： 成功接收到列表项返回pdTRUE，否则返回pdFALSE。
+* 函数说明： 
+****************************************************************************/
 
 BaseType_t xQueuePeek( QueueHandle_t xQueue, void * const pvBuffer, TickType_t xTicksToWait )
 {
@@ -1922,6 +2007,13 @@ Queue_t * const pxQueue = xQueue;
 	return xReturn;
 }
 /*-----------------------------------------------------------*/
+/***********************************************************************
+* 函数名称： uxQueueMessagesWaiting
+* 函数功能： 获取队列入队信息数目
+* 输入参数：      xQueue[IN]: 队列句柄
+* 返 回 值： 返回队列中存储的信息数目
+* 函数说明： 具有中断保护的版本为uxQueueMessagesWaitingFromISR()
+****************************************************************************/
 
 UBaseType_t uxQueueMessagesWaiting( const QueueHandle_t xQueue )
 {
@@ -1938,6 +2030,13 @@ UBaseType_t uxReturn;
 	return uxReturn;
 } /*lint !e818 Pointer cannot be declared const as xQueue is a typedef not pointer. */
 /*-----------------------------------------------------------*/
+/***********************************************************************
+* 函数名称： uxQueueSpacesAvailable
+* 函数功能： 获取队列中空闲数目
+* 输入参数：      xQueue[IN]: 队列句柄
+* 返 回 值： 返回队列中的空闲数据
+* 函数说明： 在中断中要调用具有中断保护的版本uxQueueMessagesWaitingFromISR()
+****************************************************************************/
 
 UBaseType_t uxQueueSpacesAvailable( const QueueHandle_t xQueue )
 {
@@ -1967,6 +2066,13 @@ Queue_t * const pxQueue = xQueue;
 	return uxReturn;
 } /*lint !e818 Pointer cannot be declared const as xQueue is a typedef not pointer. */
 /*-----------------------------------------------------------*/
+/***********************************************************************
+* 函数名称： vQueueDelete
+* 函数功能： 删除队列并释放分配给队列的内存
+* 输入参数： xQueue[IN]: 队列句柄
+* 返 回 值： 无
+* 函数说明： 无
+****************************************************************************/
 
 void vQueueDelete( QueueHandle_t xQueue )
 {
@@ -2304,6 +2410,13 @@ BaseType_t xReturn;
 	return xReturn;
 }
 /*-----------------------------------------------------------*/
+/***********************************************************************
+* 函数名称： xQueueIsQueueEmptyFromISR
+* 函数功能： 查询队列是否为空
+* 输入参数：      xQueue[IN]: 队列句柄
+* 返 回 值：  队列非空返回pdFALSE，其它值表示队列为空。
+* 函数说明： 此函数只能用在中断中，因为中断中出队操作不能阻塞，所以在出队前调用该函数判断队列是否为空
+****************************************************************************/
 
 BaseType_t xQueueIsQueueEmptyFromISR( const QueueHandle_t xQueue )
 {
@@ -2344,6 +2457,13 @@ BaseType_t xReturn;
 	return xReturn;
 }
 /*-----------------------------------------------------------*/
+/***********************************************************************
+* 函数名称： xQueueIsQueueFullFromISR
+* 函数功能： 查询队列是为满
+* 输入参数：      xQueue[IN]: 队列句柄
+* 返 回 值：  队列没有满返回pdFALSE，其它值表示队列为空。
+* 函数说明： 此函数只能用在中断中，因为中断中入队操作不能阻塞，所以在入队前调用该函数判断队列是否为空
+****************************************************************************/
 
 BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
 {
@@ -2640,6 +2760,18 @@ Queue_t * const pxQueue = xQueue;
 /*-----------------------------------------------------------*/
 
 #if ( configQUEUE_REGISTRY_SIZE > 0 )
+	/***********************************************************************
+	* 函数名称： vQueueAddToRegistry
+	* 函数功能： 队列注册
+	* 输入参数：      xQueue[IN]: 队列句柄
+				 pcQueueName[IN]: 分配给队列的名字。这仅是一个有助于调试的字符串。队列注册仅存储指向队列名字符串的指针，因此这个字符串必须是静态的（全局变量活着存储在ROM/Flash中），不可以定义到堆栈中。
+	* 返 回 值： 无
+	* 函数说明：  队列注册有两个目的，这两个目的都是为了调试RTOS内核：
+				它允许队列具有一个相关的文本名字，在GUI调试中可以容易的标识队列；
+				包含调试器用于定位每一个已经注册的队列和信号量时所需的信息。
+       			队列注册仅用于调试器。
+				宏configQUEUE_REGISTRY_SIZE定义了可以注册的队列和信号量的最大数量。仅当你想使用可视化调试内核时，才进行队列和信号量注册。
+	****************************************************************************/
 
 	void vQueueAddToRegistry( QueueHandle_t xQueue, const char *pcQueueName ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 	{
@@ -2697,6 +2829,13 @@ Queue_t * const pxQueue = xQueue;
 /*-----------------------------------------------------------*/
 
 #if ( configQUEUE_REGISTRY_SIZE > 0 )
+	/***********************************************************************
+	* 函数名称： vQueueUnregisterQueue
+	* 函数功能： 解除注册
+	* 输入参数： xQueue[IN]: 队列句柄
+	* 返 回 值： 无
+	* 函数说明： 从队列注册表中移除指定的队列。
+	****************************************************************************/
 
 	void vQueueUnregisterQueue( QueueHandle_t xQueue )
 	{

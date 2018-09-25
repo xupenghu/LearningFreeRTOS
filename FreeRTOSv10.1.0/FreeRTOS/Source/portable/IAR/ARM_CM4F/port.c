@@ -242,6 +242,7 @@ BaseType_t xPortStartScheduler( void )
 	#if( configASSERT_DEFINED == 1 )
 	{
 		volatile uint32_t ulOriginalPriority;
+		/* 中断优先级寄存器0 IPR0 */
 		volatile uint8_t * const pucFirstUserPriorityRegister = ( volatile uint8_t * const ) ( portNVIC_IP_REGISTERS_OFFSET_16 + portFIRST_USER_INTERRUPT_NUMBER );
 		volatile uint8_t ucMaxPriorityValue;
 
@@ -251,20 +252,25 @@ BaseType_t xPortStartScheduler( void )
 		ensure interrupt entry is as fast and simple as possible.
 
 		Save the interrupt priority value that is about to be clobbered. */
-		ulOriginalPriority = *pucFirstUserPriorityRegister;
+		 /* 这一大段代码用来确定一个最高ISR优先级,在这个ISR或者更低优先级的ISR中可以安全的调用以FromISR结尾的API函数.*/
+		
+		ulOriginalPriority = *pucFirstUserPriorityRegister; //保存中断优先级寄存器0 因为下面要覆写这个寄存器
 
 		/* Determine the number of priority bits available.  First write to all
 		possible bits. */
-		*pucFirstUserPriorityRegister = portMAX_8_BIT_VALUE;
+		/* 确定有效的优先级位个数. 首先向所有位写1,然后再读出来,由于无效的优先级位读出为0,然后数一数有多少个1,就能知道有多少位优先级.*/
+		*pucFirstUserPriorityRegister = portMAX_8_BIT_VALUE;	//
 
 		/* Read the value back to see how many bits stuck. */
 		ucMaxPriorityValue = *pucFirstUserPriorityRegister;
 
+        /* 冗余代码,用来防止用户不正确的设置RTOS可屏蔽中断优先级值 */
 		/* Use the same mask on the maximum system call priority. */
 		ucMaxSysCallPriority = configMAX_SYSCALL_INTERRUPT_PRIORITY & ucMaxPriorityValue;
 
 		/* Calculate the maximum acceptable priority group value for the number
 		of bits read back. */
+		/* 计算最大优先级组值 */
 		ulMaxPRIGROUPValue = portMAX_PRIGROUP_BITS;
 		while( ( ucMaxPriorityValue & portTOP_BIT_OF_BYTE ) == portTOP_BIT_OF_BYTE )
 		{
@@ -297,29 +303,31 @@ BaseType_t xPortStartScheduler( void )
 
 		/* Restore the clobbered interrupt priority register to its original
 		value. */
-		*pucFirstUserPriorityRegister = ulOriginalPriority;
+		*pucFirstUserPriorityRegister = ulOriginalPriority; //将IPR0寄存器的值复原
 	}
 	#endif /* conifgASSERT_DEFINED */
 
 	/* Make PendSV and SysTick the lowest priority interrupts. */
+	/* 将PENDSV和Systick优先级设置为最低 */
 	portNVIC_SYSPRI2_REG |= portNVIC_PENDSV_PRI;
 	portNVIC_SYSPRI2_REG |= portNVIC_SYSTICK_PRI;
 
 	/* Start the timer that generates the tick ISR.  Interrupts are disabled
 	here already. */
+	/* 启动systick定时器 初始化中断周期并使能定时器 */
 	vPortSetupTimerInterrupt();
 
 	/* Initialise the critical nesting count ready for the first task. */
-	uxCriticalNesting = 0;
+	uxCriticalNesting = 0; //初始化临界区嵌套计数器
 
 	/* Ensure the VFP is enabled - it should be anyway. */
-	vPortEnableVFP();
+	vPortEnableVFP();	//
 
 	/* Lazy save always. */
 	*( portFPCCR ) |= portASPEN_AND_LSPEN_BITS;
 
 	/* Start the first task. */
-	vPortStartFirstTask();
+	vPortStartFirstTask(); //启动第一个任务
 
 	/* Should not get here! */
 	return 0;
@@ -368,17 +376,18 @@ void xPortSysTickHandler( void )
 	executes all interrupts must be unmasked.  There is therefore no need to
 	save and then restore the interrupt mask value as its value is already
 	known. */
+	/*失能中断*/
 	portDISABLE_INTERRUPTS();
 	{
-		/* Increment the RTOS tick. */
+		/* Increment the RTOS tick. 增加任务tick计数值 并判断如果需要任务切换则触发pendsv中断*/
 		if( xTaskIncrementTick() != pdFALSE )
 		{
 			/* A context switch is required.  Context switching is performed in
 			the PendSV interrupt.  Pend the PendSV interrupt. */
-			portNVIC_INT_CTRL_REG = portNVIC_PENDSVSET_BIT;
+			portNVIC_INT_CTRL_REG = portNVIC_PENDSVSET_BIT;//触发pendsv中断
 		}
 	}
-	portENABLE_INTERRUPTS();
+	portENABLE_INTERRUPTS(); //使能中断
 }
 /*-----------------------------------------------------------*/
 

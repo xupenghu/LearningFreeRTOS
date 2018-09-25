@@ -40,3 +40,4 @@
 ..\obj\oled.o: ..\HARDWARE\OLED\oledfont.h
 ..\obj\oled.o: ..\SYSTEM\delay\delay.h
 ..\obj\oled.o: ..\HARDWARE\IIC\myiic.h
+..\obj\oled.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h

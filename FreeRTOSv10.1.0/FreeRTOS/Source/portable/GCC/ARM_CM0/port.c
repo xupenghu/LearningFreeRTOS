@@ -330,14 +330,14 @@ void xPortPendSVHandler( void )
 void xPortSysTickHandler( void )
 {
 uint32_t ulPreviousMask;
-
+	/* 设置中断掩码*/
 	ulPreviousMask = portSET_INTERRUPT_MASK_FROM_ISR();
 	{
-		/* Increment the RTOS tick. */
+		/* Increment the RTOS tick. 增加tick计数值并检查是否有任务接触阻塞*/
 		if( xTaskIncrementTick() != pdFALSE )
 		{
-			/* Pend a context switch. */
-			*(portNVIC_INT_CTRL) = portNVIC_PENDSVSET;
+			/* Pend a context switch. 触发PendSV中断*/
+			*(portNVIC_INT_CTRL) = portNVIC_PENDSVSET; //PendSV中断置位
 		}
 	}
 	portCLEAR_INTERRUPT_MASK_FROM_ISR( ulPreviousMask );

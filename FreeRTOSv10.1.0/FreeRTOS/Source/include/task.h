@@ -81,11 +81,11 @@ typedef enum
 /* Actions that can be performed when vTaskNotify() is called. */
 typedef enum
 {
-	eNoAction = 0,				/* Notify the task without updating its notify value. */
-	eSetBits,					/* Set bits in the task's notification value. */
-	eIncrement,					/* Increment the task's notification value. */
-	eSetValueWithOverwrite,		/* Set the task's notification value to a specific value even if the previous value has not yet been read by the task. */
-	eSetValueWithoutOverwrite	/* Set the task's notification value if the previous value has been read by the task. */
+	eNoAction = 0,				/* 发送通知但不更新通知值，这意味着参数ulValue的值未使用， Notify the task without updating its notify value. */
+	eSetBits,					/* 被通知任务的通知值按位或上ulValue，使用这种方法可以在某些场合下代替时间组，但是执行速度更快，Set bits in the task's notification value. */
+	eIncrement,					/* 被通知的任务通知值加一，这种情况下，参数ulValue的值未使用，Increment the task's notification value. */
+	eSetValueWithOverwrite,		/* 被通知任务的通知值设置为ulValue，使用这种方法可以在某些场景下代替xQueueOverwrite(),但是执行速度会更快。Set the task's notification value to a specific value even if the previous value has not yet been read by the task. */
+	eSetValueWithoutOverwrite	/* 如果被通知的任务当前没有通知，则被通知的任务的通知值设置为ulValue；Set the task's notification value if the previous value has been read by the task. */
 } eNotifyAction;
 
 /*
@@ -128,15 +128,15 @@ typedef struct xTASK_PARAMETERS
 in the system. */
 typedef struct xTASK_STATUS
 {
-	TaskHandle_t xHandle;			/* The handle of the task to which the rest of the information in the structure relates. */
-	const char *pcTaskName;			/* A pointer to the task's name.  This value will be invalid if the task was deleted since the structure was populated! */ /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
-	UBaseType_t xTaskNumber;		/* A number unique to the task. */
-	eTaskState eCurrentState;		/* The state in which the task existed when the structure was populated. */
-	UBaseType_t uxCurrentPriority;	/* The priority at which the task was running (may be inherited) when the structure was populated. */
-	UBaseType_t uxBasePriority;		/* The priority to which the task will return if the task's current priority has been inherited to avoid unbounded priority inversion when obtaining a mutex.  Only valid if configUSE_MUTEXES is defined as 1 in FreeRTOSConfig.h. */
-	uint32_t ulRunTimeCounter;		/* The total run time allocated to the task so far, as defined by the run time stats clock.  See http://www.freertos.org/rtos-run-time-stats.html.  Only valid when configGENERATE_RUN_TIME_STATS is defined as 1 in FreeRTOSConfig.h. */
-	StackType_t *pxStackBase;		/* Points to the lowest address of the task's stack area. */
-	configSTACK_DEPTH_TYPE usStackHighWaterMark;	/* The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
+	TaskHandle_t xHandle;			/* 任务句柄 The handle of the task to which the rest of the information in the structure relates. */
+	const char *pcTaskName;			/* 任务名字 A pointer to the task's name.  This value will be invalid if the task was deleted since the structure was populated! */ /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+	UBaseType_t xTaskNumber;		/* 任务ID 是一个独一无二的数字 A number unique to the task. */
+	eTaskState eCurrentState;		/* 任务当前的状态 The state in which the task existed when the structure was populated. */
+	UBaseType_t uxCurrentPriority;	/* 任务运行的优先级 The priority at which the task was running (may be inherited) when the structure was populated. */
+	UBaseType_t uxBasePriority;		/* 任务最初的优先级 The priority to which the task will return if the task's current priority has been inherited to avoid unbounded priority inversion when obtaining a mutex.  Only valid if configUSE_MUTEXES is defined as 1 in FreeRTOSConfig.h. */
+	uint32_t ulRunTimeCounter;		/* 分配给任务的总运行时间 The total run time allocated to the task so far, as defined by the run time stats clock.  See http://www.freertos.org/rtos-run-time-stats.html.  Only valid when configGENERATE_RUN_TIME_STATS is defined as 1 in FreeRTOSConfig.h. */
+	StackType_t *pxStackBase;		/* 任务堆栈最小地址指针 Points to the lowest address of the task's stack area. */
+	configSTACK_DEPTH_TYPE usStackHighWaterMark;	/* 从任务创建起，堆栈剩余的最小数量            , 这个值越接近于0，堆栈越有溢出的危险              |        The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
 } TaskStatus_t;
 
 /* Possible return values for eTaskConfirmSleepModeStatus(). */

@@ -144,6 +144,7 @@ void vPortEndScheduler( void )
  * Hardware initialisation to generate the RTOS tick.  This uses timer 0
  * but could alternatively use the watchdog timer or timer 1.
  */
+ /* 设置systick定时周期并启动 硬件操作代码 */
 void vPortSetupTimerInterrupt( void )
 {
 	/* Ensure the timer is stopped. */

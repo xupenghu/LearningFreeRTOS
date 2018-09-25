@@ -40,10 +40,10 @@ I (..\SYSTEM\usart\usart.h)(0x5B7B65EC)
 I (C:\Keil_v5\ARM\ARMCC\include\stdio.h)(0x5475F300)
 I (..\HARDWARE\LED\led.h)(0x5B7B65EB)
 I (C:\Keil_v5\ARM\ARMCC\include\stdlib.h)(0x5475F300)
-I (..\HARDWARE\OLED\oled.h)(0x5B83B969)
+I (..\HARDWARE\OLED\oled.h)(0x5B86660B)
 I (..\FreeRTOS\include\FreeRTOS.h)(0x5B7DF2AC)
 I (C:\Keil_v5\ARM\ARMCC\include\stddef.h)(0x5475F300)
-I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B83E22E)
+I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B84AA8A)
 I (..\FreeRTOS\include\projdefs.h)(0x5B7DF2AA)
 I (..\FreeRTOS\include\portable.h)(0x5B7DF2AB)
 I (..\FreeRTOS\include\deprecated_definitions.h)(0x5B7DF2AB)
@@ -161,8 +161,8 @@ I (..\FWLIB\inc\stm32f4xx_can.h)(0x5B7B65EB)
 I (..\FWLIB\inc\stm32f4xx_dac.h)(0x5B7B65EB)
 I (..\FWLIB\inc\stm32f4xx_dcmi.h)(0x5B7B65EB)
 I (..\FWLIB\inc\stm32f4xx_fsmc.h)(0x5B7B65EB)
-F (..\HARDWARE\OLED\oled.c)(0x5B83B9B1)(-c --cpu Cortex-M4.fp -g -O0 --apcs=interwork --split_sections -I..\CORE -I..\SYSTEM\delay -I..\SYSTEM\sys -I..\SYSTEM\usart -I..\USER -I..\HARDWARE\LED -I..\FWLIB\inc -I..\HARDWARE\OLED -I..\HARDWARE\IIC -I..\FreeRTOS\include -I..\FreeRTOS\portable\RVDS\ARM_CM4F-I C:\Users\youyou\Desktop\github\LearningFreeRTOS\Lesson1_FreeRTOSÒÆÖ²\Project\USER\RTE-I C:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.7.0-I C:\Keil_v5\ARM\CMSIS\Include-I C:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.7.0\Device\Include-D__UVISION_VERSION="514" -DSTM32F407xx -DSTM32F40_41xxx -DUSE_STDPERIPH_DRIVER-o ..\obj\oled.o --omf_browse ..\obj\oled.crf --depend ..\obj\oled.d)
-I (..\HARDWARE\OLED\oled.h)(0x5B83B969)
+F (..\HARDWARE\OLED\oled.c)(0x5B8664F7)(-c --cpu Cortex-M4.fp -g -O0 --apcs=interwork --split_sections -I..\CORE -I..\SYSTEM\delay -I..\SYSTEM\sys -I..\SYSTEM\usart -I..\USER -I..\HARDWARE\LED -I..\FWLIB\inc -I..\HARDWARE\OLED -I..\HARDWARE\IIC -I..\FreeRTOS\include -I..\FreeRTOS\portable\RVDS\ARM_CM4F-I C:\Users\youyou\Desktop\github\LearningFreeRTOS\Lesson1_FreeRTOSÒÆÖ²\Project\USER\RTE-I C:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.7.0-I C:\Keil_v5\ARM\CMSIS\Include-I C:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.7.0\Device\Include-D__UVISION_VERSION="514" -DSTM32F407xx -DSTM32F40_41xxx -DUSE_STDPERIPH_DRIVER-o ..\obj\oled.o --omf_browse ..\obj\oled.crf --depend ..\obj\oled.d)
+I (..\HARDWARE\OLED\oled.h)(0x5B86660B)
 I (..\SYSTEM\sys\sys.h)(0x5B83DDA4)
 I (..\USER\stm32f4xx.h)(0x5B7B65EC)
 I (..\CORE\core_cm4.h)(0x5B7B65EB)
@@ -199,9 +199,10 @@ I (..\FWLIB\inc\stm32f4xx_dac.h)(0x5B7B65EB)
 I (..\FWLIB\inc\stm32f4xx_dcmi.h)(0x5B7B65EB)
 I (..\FWLIB\inc\stm32f4xx_fsmc.h)(0x5B7B65EB)
 I (C:\Keil_v5\ARM\ARMCC\include\stdlib.h)(0x5475F300)
-I (..\HARDWARE\OLED\oledfont.h)(0x5B7B65EB)
+I (..\HARDWARE\OLED\oledfont.h)(0x5B865D7D)
 I (..\SYSTEM\delay\delay.h)(0x5B7B65EC)
 I (..\HARDWARE\IIC\myiic.h)(0x5B83B766)
+I (C:\Keil_v5\ARM\ARMCC\include\string.h)(0x5475F300)
 F (..\HARDWARE\IIC\myiic.c)(0x5B83B88D)(-c --cpu Cortex-M4.fp -g -O0 --apcs=interwork --split_sections -I..\CORE -I..\SYSTEM\delay -I..\SYSTEM\sys -I..\SYSTEM\usart -I..\USER -I..\HARDWARE\LED -I..\FWLIB\inc -I..\HARDWARE\OLED -I..\HARDWARE\IIC -I..\FreeRTOS\include -I..\FreeRTOS\portable\RVDS\ARM_CM4F-I C:\Users\youyou\Desktop\github\LearningFreeRTOS\Lesson1_FreeRTOSÒÆÖ²\Project\USER\RTE-I C:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.7.0-I C:\Keil_v5\ARM\CMSIS\Include-I C:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.7.0\Device\Include-D__UVISION_VERSION="514" -DSTM32F407xx -DSTM32F40_41xxx -DUSE_STDPERIPH_DRIVER-o ..\obj\myiic.o --omf_browse ..\obj\myiic.crf --depend ..\obj\myiic.d)
 I (..\HARDWARE\IIC\myiic.h)(0x5B83B766)
 I (..\SYSTEM\sys\sys.h)(0x5B83DDA4)
@@ -279,7 +280,7 @@ I (..\FWLIB\inc\stm32f4xx_dcmi.h)(0x5B7B65EB)
 I (..\FWLIB\inc\stm32f4xx_fsmc.h)(0x5B7B65EB)
 I (..\FreeRTOS\include\FreeRTOS.h)(0x5B7DF2AC)
 I (C:\Keil_v5\ARM\ARMCC\include\stddef.h)(0x5475F300)
-I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B83E22E)
+I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B84AA8A)
 I (..\FreeRTOS\include\projdefs.h)(0x5B7DF2AA)
 I (..\FreeRTOS\include\portable.h)(0x5B7DF2AB)
 I (..\FreeRTOS\include\deprecated_definitions.h)(0x5B7DF2AB)
@@ -363,7 +364,7 @@ I (..\SYSTEM\usart\usart.h)(0x5B7B65EC)
 I (C:\Keil_v5\ARM\ARMCC\include\stdio.h)(0x5475F300)
 I (..\FreeRTOS\include\FreeRTOS.h)(0x5B7DF2AC)
 I (C:\Keil_v5\ARM\ARMCC\include\stddef.h)(0x5475F300)
-I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B83E22E)
+I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B84AA8A)
 I (..\FreeRTOS\include\projdefs.h)(0x5B7DF2AA)
 I (..\FreeRTOS\include\portable.h)(0x5B7DF2AB)
 I (..\FreeRTOS\include\deprecated_definitions.h)(0x5B7DF2AB)
@@ -550,7 +551,7 @@ F (..\FreeRTOS\croutine.c)(0x5B7DF2A9)(-c --cpu Cortex-M4.fp -g -O0 --apcs=inter
 I (..\FreeRTOS\include\FreeRTOS.h)(0x5B7DF2AC)
 I (C:\Keil_v5\ARM\ARMCC\include\stddef.h)(0x5475F300)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5475F300)
-I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B83E22E)
+I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B84AA8A)
 I (..\FreeRTOS\include\projdefs.h)(0x5B7DF2AA)
 I (..\FreeRTOS\include\portable.h)(0x5B7DF2AB)
 I (..\FreeRTOS\include\deprecated_definitions.h)(0x5B7DF2AB)
@@ -564,7 +565,7 @@ I (C:\Keil_v5\ARM\ARMCC\include\stdlib.h)(0x5475F300)
 I (..\FreeRTOS\include\FreeRTOS.h)(0x5B7DF2AC)
 I (C:\Keil_v5\ARM\ARMCC\include\stddef.h)(0x5475F300)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5475F300)
-I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B83E22E)
+I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B84AA8A)
 I (..\FreeRTOS\include\projdefs.h)(0x5B7DF2AA)
 I (..\FreeRTOS\include\portable.h)(0x5B7DF2AB)
 I (..\FreeRTOS\include\deprecated_definitions.h)(0x5B7DF2AB)
@@ -579,7 +580,7 @@ I (C:\Keil_v5\ARM\ARMCC\include\stdlib.h)(0x5475F300)
 I (..\FreeRTOS\include\FreeRTOS.h)(0x5B7DF2AC)
 I (C:\Keil_v5\ARM\ARMCC\include\stddef.h)(0x5475F300)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5475F300)
-I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B83E22E)
+I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B84AA8A)
 I (..\FreeRTOS\include\projdefs.h)(0x5B7DF2AA)
 I (..\FreeRTOS\include\portable.h)(0x5B7DF2AB)
 I (..\FreeRTOS\include\deprecated_definitions.h)(0x5B7DF2AB)
@@ -592,7 +593,7 @@ I (C:\Keil_v5\ARM\ARMCC\include\string.h)(0x5475F300)
 I (..\FreeRTOS\include\FreeRTOS.h)(0x5B7DF2AC)
 I (C:\Keil_v5\ARM\ARMCC\include\stddef.h)(0x5475F300)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5475F300)
-I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B83E22E)
+I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B84AA8A)
 I (..\FreeRTOS\include\projdefs.h)(0x5B7DF2AA)
 I (..\FreeRTOS\include\portable.h)(0x5B7DF2AB)
 I (..\FreeRTOS\include\deprecated_definitions.h)(0x5B7DF2AB)
@@ -607,7 +608,7 @@ I (C:\Keil_v5\ARM\ARMCC\include\string.h)(0x5475F300)
 I (..\FreeRTOS\include\FreeRTOS.h)(0x5B7DF2AC)
 I (C:\Keil_v5\ARM\ARMCC\include\stddef.h)(0x5475F300)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5475F300)
-I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B83E22E)
+I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B84AA8A)
 I (..\FreeRTOS\include\projdefs.h)(0x5B7DF2AA)
 I (..\FreeRTOS\include\portable.h)(0x5B7DF2AB)
 I (..\FreeRTOS\include\deprecated_definitions.h)(0x5B7DF2AB)
@@ -622,7 +623,7 @@ I (C:\Keil_v5\ARM\ARMCC\include\stdlib.h)(0x5475F300)
 I (..\FreeRTOS\include\FreeRTOS.h)(0x5B7DF2AC)
 I (C:\Keil_v5\ARM\ARMCC\include\stddef.h)(0x5475F300)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5475F300)
-I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B83E22E)
+I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B84AA8A)
 I (..\FreeRTOS\include\projdefs.h)(0x5B7DF2AA)
 I (..\FreeRTOS\include\portable.h)(0x5B7DF2AB)
 I (..\FreeRTOS\include\deprecated_definitions.h)(0x5B7DF2AB)
@@ -637,7 +638,7 @@ I (C:\Keil_v5\ARM\ARMCC\include\stdlib.h)(0x5475F300)
 I (..\FreeRTOS\include\FreeRTOS.h)(0x5B7DF2AC)
 I (C:\Keil_v5\ARM\ARMCC\include\stddef.h)(0x5475F300)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5475F300)
-I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B83E22E)
+I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B84AA8A)
 I (..\FreeRTOS\include\projdefs.h)(0x5B7DF2AA)
 I (..\FreeRTOS\include\portable.h)(0x5B7DF2AB)
 I (..\FreeRTOS\include\deprecated_definitions.h)(0x5B7DF2AB)
@@ -649,7 +650,7 @@ F (..\FreeRTOS\portable\RVDS\ARM_CM4F\port.c)(0x5B83E20C)(-c --cpu Cortex-M4.fp 
 I (..\FreeRTOS\include\FreeRTOS.h)(0x5B7DF2AC)
 I (C:\Keil_v5\ARM\ARMCC\include\stddef.h)(0x5475F300)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5475F300)
-I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B83E22E)
+I (..\FreeRTOS\include\FreeRTOSConfig.h)(0x5B84AA8A)
 I (..\FreeRTOS\include\projdefs.h)(0x5B7DF2AA)
 I (..\FreeRTOS\include\portable.h)(0x5B7DF2AB)
 I (..\FreeRTOS\include\deprecated_definitions.h)(0x5B7DF2AB)

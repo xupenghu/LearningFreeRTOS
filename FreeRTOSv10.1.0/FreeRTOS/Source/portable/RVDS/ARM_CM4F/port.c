@@ -237,11 +237,15 @@ __asm void vPortSVCHandler( void )
 	PRESERVE8
 
 	/* Get the location of the current TCB. */
+	/*获取当前任务tcb*/
 	ldr	r3, =pxCurrentTCB
-	ldr r1, [r3]
+	/* 获取任务TCB地址*/
+	ldr r1, [r3]	
+	/* 获取任务第一个成员，及堆栈的栈顶指针pxTopOFStack*/
 	ldr r0, [r1]
-	/* Pop the core registers. */
+	/* Pop the core registers. 将寄存器 r4-r14出栈 */
 	ldmia r0!, {r4-r11, r14}
+	/* 最新的栈顶指针赋值给线程堆栈指针psp */
 	msr psp, r0
 	isb
 	mov r0, #0
@@ -249,7 +253,7 @@ __asm void vPortSVCHandler( void )
 	bx r14
 }
 /*-----------------------------------------------------------*/
-
+/* 开始第一个任务*/
 __asm void prvStartFirstTask( void )
 {
 	PRESERVE8
@@ -266,12 +270,12 @@ __asm void prvStartFirstTask( void )
 	registers. */
 	mov r0, #0
 	msr control, r0
-	/* Globally enable interrupts. */
+	/* Globally enable interrupts. 使能全局中断*/
 	cpsie i
 	cpsie f
 	dsb
 	isb
-	/* Call SVC to start the first task. */
+	/* Call SVC to start the first task. 启动SCV启动第一个任务*/
 	svc 0
 	nop
 	nop
@@ -376,24 +380,24 @@ BaseType_t xPortStartScheduler( void )
 	#endif /* conifgASSERT_DEFINED */
 
 	/* Make PendSV and SysTick the lowest priority interrupts. */
-	portNVIC_SYSPRI2_REG |= portNVIC_PENDSV_PRI;
+	portNVIC_SYSPRI2_REG |= portNVIC_PENDSV_PRI; //设置pendsv和systick中断优先级为最低
 	portNVIC_SYSPRI2_REG |= portNVIC_SYSTICK_PRI;
 
 	/* Start the timer that generates the tick ISR.  Interrupts are disabled
 	here already. */
-	vPortSetupTimerInterrupt();
+	vPortSetupTimerInterrupt(); //配置systick中断 设置系统节拍
 
 	/* Initialise the critical nesting count ready for the first task. */
 	uxCriticalNesting = 0;
 
 	/* Ensure the VFP is enabled - it should be anyway. */
-	prvEnableVFP();
+	prvEnableVFP();	//使能VFP
 
 	/* Lazy save always. */
 	*( portFPCCR ) |= portASPEN_AND_LSPEN_BITS;
 
 	/* Start the first task. */
-	prvStartFirstTask();
+	prvStartFirstTask(); //开始第一个任务
 
 	/* Should not get here! */
 	return 0;
@@ -439,14 +443,15 @@ void vPortExitCritical( void )
 __asm void xPortPendSVHandler( void )
 {
 	extern uxCriticalNesting;
-	extern pxCurrentTCB;
+	extern pxCurrentTCB;	//全局变量 当前正在运行的任务
 	extern vTaskSwitchContext;
 
 	PRESERVE8
-
+	/*psp内容存入r0寄存器*/
 	mrs r0, psp
+	/* 指令同步隔离 清流水线 */
 	isb
-	/* Get the location of the current TCB. */
+	/* Get the location of the current TCB. 当前激活的任务tcp指针存入r2*/
 	ldr	r3, =pxCurrentTCB
 	ldr	r2, [r3]
 
@@ -456,16 +461,21 @@ __asm void xPortPendSVHandler( void )
 	vstmdbeq r0!, {s16-s31}
 
 	/* Save the core registers. */
+	 /* 保存剩余的寄存器,异常处理程序执行前,硬件自动将xPSR、PC、LR、R12、R0-R3入栈 */
 	stmdb r0!, {r4-r11, r14}
 
 	/* Save the new top of stack into the first member of the TCB. */
+	/* 将新的栈顶保存到任务TCB的第一个成员中 */
 	str r0, [r2]
 
 	stmdb sp!, {r0, r3}
+	/*进入临界区*/
 	mov r0, #configMAX_SYSCALL_INTERRUPT_PRIORITY
 	msr basepri, r0
+	/* 数据和指令隔离 */
 	dsb
 	isb
+	/* 调用函数 寻找新任务运行 */
 	bl vTaskSwitchContext
 	mov r0, #0
 	msr basepri, r0
@@ -475,7 +485,7 @@ __asm void xPortPendSVHandler( void )
 	ldr r1, [r3]
 	ldr r0, [r1]
 
-	/* Pop the core registers. */
+	/* Pop the core registers. 恢复*/
 	ldmia r0!, {r4-r11, r14}
 
 	/* Is the task using the FPU context?  If so, pop the high vfp registers
@@ -493,7 +503,9 @@ __asm void xPortPendSVHandler( void )
 			nop
 		#endif
 	#endif
-
+	/* 异常发生时,R14中保存异常返回标志,包括返回后进入线程模式还是处理器模式、使用PSP堆栈指针还是MSP堆栈指针，
+	   当调用 bx r14指令后，硬件会知道要从异常返回，然后出栈，这个时候堆栈指针PSP已经指向了新任务堆栈的正确位置，
+	   当新任务的运行地址被出栈到PC寄存器后，新的任务也会被执行。*/
 	bx r14
 }
 /*-----------------------------------------------------------*/
@@ -505,14 +517,17 @@ void xPortSysTickHandler( void )
 	save and then restore the interrupt mask value as its value is already
 	known - therefore the slightly faster vPortRaiseBASEPRI() function is used
 	in place of portSET_INTERRUPT_MASK_FROM_ISR(). */
+	/* SysTick以最低的中断优先级运行，因此当执行此中断时，必须取消屏蔽所有中断。 
+	因此，无需保存然后恢复中断屏蔽值，因为其值已知 - 
+	因此使用稍快的vPortRaiseBASEPRI（）函数代替portSET_INTERRUPT_MASK_FROM_ISR（）。*/
 	vPortRaiseBASEPRI();
 	{
-		/* Increment the RTOS tick. */
+		/* Increment the RTOS tick. 增加systick计数值并判断是否有任务解除阻塞*/
 		if( xTaskIncrementTick() != pdFALSE )
 		{
 			/* A context switch is required.  Context switching is performed in
 			the PendSV interrupt.  Pend the PendSV interrupt. */
-			portNVIC_INT_CTRL_REG = portNVIC_PENDSVSET_BIT;
+			portNVIC_INT_CTRL_REG = portNVIC_PENDSVSET_BIT;	//触发pendsv异常
 		}
 	}
 	vPortClearBASEPRIFromISR();

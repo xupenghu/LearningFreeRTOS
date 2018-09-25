@@ -137,15 +137,16 @@ use of FreeRTOS.*/
  * Definition of the only type of object that a list can contain.
  */
 struct xLIST;
+/* 列表项 */
 struct xLIST_ITEM
 {
-	listFIRST_LIST_ITEM_INTEGRITY_CHECK_VALUE			/*< Set to a known value if configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES is set to 1. */
-	configLIST_VOLATILE TickType_t xItemValue;			/*< The value being listed.  In most cases this is used to sort the list in descending order. */
-	struct xLIST_ITEM * configLIST_VOLATILE pxNext;		/*< Pointer to the next ListItem_t in the list. */
-	struct xLIST_ITEM * configLIST_VOLATILE pxPrevious;	/*< Pointer to the previous ListItem_t in the list. */
-	void * pvOwner;										/*< Pointer to the object (normally a TCB) that contains the list item.  There is therefore a two way link between the object containing the list item and the list item itself. */
-	struct xLIST * configLIST_VOLATILE pxContainer;		/*< Pointer to the list in which this list item is placed (if any). */
-	listSECOND_LIST_ITEM_INTEGRITY_CHECK_VALUE			/*< Set to a known value if configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES is set to 1. */
+	listFIRST_LIST_ITEM_INTEGRITY_CHECK_VALUE			/*用于检测列表项数据是否完整 < Set to a known value if configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES is set to 1. */
+	configLIST_VOLATILE TickType_t xItemValue;			/*列表项值 < The value being listed.  In most cases this is used to sort the list in descending order. */
+	struct xLIST_ITEM * configLIST_VOLATILE pxNext;		/*指向列表中下一个列表项 < Pointer to the next ListItem_t in the list. */
+	struct xLIST_ITEM * configLIST_VOLATILE pxPrevious;	/*指向列表中上一个列表项 < Pointer to the previous ListItem_t in the list. */
+	void * pvOwner;										/*指向一个任务TCB < Pointer to the object (normally a TCB) that contains the list item.  There is therefore a two way link between the object containing the list item and the list item itself. */
+	struct xLIST * configLIST_VOLATILE pxContainer;		/*指向包含该列表项的列表 < Pointer to the list in which this list item is placed (if any). */
+	listSECOND_LIST_ITEM_INTEGRITY_CHECK_VALUE			/*用于检测列表项数据是否完整 < Set to a known value if configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES is set to 1. */
 };
 typedef struct xLIST_ITEM ListItem_t;					/* For some reason lint wants this as two separate definitions. */
 
@@ -164,9 +165,9 @@ typedef struct xMINI_LIST_ITEM MiniListItem_t;
 typedef struct xLIST
 {
 	listFIRST_LIST_INTEGRITY_CHECK_VALUE				/*< Set to a known value if configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES is set to 1. */
-	volatile UBaseType_t uxNumberOfItems;
-	ListItem_t * configLIST_VOLATILE pxIndex;			/*< Used to walk through the list.  Points to the last item returned by a call to listGET_OWNER_OF_NEXT_ENTRY (). */
-	MiniListItem_t xListEnd;							/*< List item that contains the maximum possible item value meaning it is always at the end of the list and is therefore used as a marker. */
+	volatile UBaseType_t uxNumberOfItems;				/* 该列表中挂接的列表项数目，0表示列表为空。 */
+	ListItem_t * configLIST_VOLATILE pxIndex;			/* 列表项类型指针用于遍历列表，列表初始化后，这个指针指向&xListEnd。通过宏listGET_OWNER_OF_NEXT_ENTRY()来获取列表中的下一个列表项。< Used to walk through the list.  Points to the last item returned by a call to listGET_OWNER_OF_NEXT_ENTRY (). */
+	MiniListItem_t xListEnd;							/* 列表项xListEnd用于标记列表结束。xListEnd.xItemValue被初始化为一个常数，其值与硬件架构相关，为0xFFFF（16位架构）或者0xFFFFFFFF（32位架构）。< List item that contains the maximum possible item value meaning it is always at the end of the list and is therefore used as a marker. */
 	listSECOND_LIST_INTEGRITY_CHECK_VALUE				/*< Set to a known value if configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES is set to 1. */
 } List_t;
 
