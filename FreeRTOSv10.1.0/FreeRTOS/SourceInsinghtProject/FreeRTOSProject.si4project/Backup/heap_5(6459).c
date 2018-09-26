@@ -66,13 +66,6 @@
  *
  * Note 0x80000000 is the lower address so appears in the array first.
  *
- *
- * 这个内存分配策略和heap_4.c十分相似 但是允许内存堆跨越多个不连续的内存堆
- * 第一、第二和第四种内存管理策略都是利用一个大数组作为内存堆使用，并且只需要应用程序指定数组的大小
- * （通过宏configTOTAL_HEAP_SIZE定义），数组定义由内存管理策略实现。第五种内存管理策略有些不同，
- * 首先它允许跨内存区定义多个内存堆，比如在片内RAM中定义一个内存堆，还可以在片外RAM再定义内存堆；
- * 其次，用户需要指定每个内存堆区域的起始地址和内存堆大小、将它们放在一个HeapRegion_t结构体类型数组中，
- * 并需要在使用任何内存分配和释放操作前调用vPortDefineHeapRegions()函数初始化这些内存堆。
  */
 #include <stdlib.h>
 
@@ -396,13 +389,6 @@ uint8_t *puc;
 	}
 }
 /*-----------------------------------------------------------*/
-/***********************************************************************
-* 函数名称： vPortDefineHeapRegions
-* 函数功能： 初始化内存堆
-* 输入参数： pxHeapRegions[IN]: 内存堆空间和大小数组 以{NULL,0}结束
-* 返 回 值： 无
-* 函数说明： 
-****************************************************************************/
 
 void vPortDefineHeapRegions( const HeapRegion_t * const pxHeapRegions )
 {
@@ -414,10 +400,10 @@ size_t xAddress;
 const HeapRegion_t *pxHeapRegion;
 
 	/* Can only call once! */
-	configASSERT( pxEnd == NULL );	//只需要初始化一次即可 
+	configASSERT( pxEnd == NULL );
 
 	pxHeapRegion = &( pxHeapRegions[ xDefinedRegions ] );
-	/* 将这些内存块用链表组织起来 */
+
 	while( pxHeapRegion->xSizeInBytes > 0 )
 	{
 		xTotalRegionSize = pxHeapRegion->xSizeInBytes;

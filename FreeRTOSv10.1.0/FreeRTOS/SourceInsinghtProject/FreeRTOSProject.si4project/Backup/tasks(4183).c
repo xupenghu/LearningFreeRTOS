@@ -65,9 +65,9 @@ functions but without including stdio.h here. */
 #endif
 
 /* Values that can be assigned to the ucNotifyState member of the TCB. */
-#define taskNOT_WAITING_NOTIFICATION	( ( uint8_t ) 0 )	//没有等待任务通知
-#define taskWAITING_NOTIFICATION		( ( uint8_t ) 1 )	//等待任务通知
-#define taskNOTIFICATION_RECEIVED		( ( uint8_t ) 2 )	//已经接收到通知
+#define taskNOT_WAITING_NOTIFICATION	( ( uint8_t ) 0 )
+#define taskWAITING_NOTIFICATION		( ( uint8_t ) 1 )
+#define taskNOTIFICATION_RECEIVED		( ( uint8_t ) 2 )
 
 /*
  * The value used to fill the stack of a task when the task is created.  This
@@ -4721,13 +4721,11 @@ TickType_t uxReturn;
 	/***********************************************************************
 	* 函数名称： ulTaskNotifyTake
 	* 函数功能： 获取通知
-	* 输入参数： xClearCountOnExit[IN]: 如果该参数设置为pdFALSE，则API函数xTaskNotifyTake()退出前，将任务的通知值减1；
-				 如果该参数设置为pdTRUE，则API函数xTaskNotifyTake()退出前，将任务通知值清零。
+	* 输入参数： xClearCountOnExit[IN]: 如果该参数设置为pdFALSE，则API函数xTaskNotifyTake()退出前，将任务的通知值减1；如果该参数设置为pdTRUE，则API函数xTaskNotifyTake()退出前，将任务通知值清零。
 				 xTicksToWait[IN]: 最大等待的系统节拍数
 	* 返 回 值： 返回任务的当前通知值，为0或者为调用API函数xTaskNotifyTake()之前的通知值减1。
 	* 函数说明： ulTaskNotifyTake()是专门为使用更轻量级更快的方法来代替二进制或计数信号量而量身打造的。FreeRTOS获取信号量的API函数为xSemaphoreTake()，可以使用ulTaskNotifyTake()函数等价代替。
-				 当一个任务使用通知值来实现二进制或计数信号量时，其它任务或者中断要使用API函数xTaskNotifyGive()或者使用参数eAction为eIncrement的API函数xTaskNotify()。推荐使用xTaskNotifyGive()函数（其实是个宏，我们这里把它看作一个API函数）。
-				 另外需要注意的是，如果在中断中使用，要使用它们的中断保护等价函数：vTaskNotifyGiveFromISR()和xTaskNotifyFromISR()。
+				 当一个任务使用通知值来实现二进制或计数信号量时，其它任务或者中断要使用API函数xTaskNotifyGive()或者使用参数eAction为eIncrement的API函数xTaskNotify()。推荐使用xTaskNotifyGive()函数（其实是个宏，我们这里把它看作一个API函数）。另外需要注意的是，如果在中断中使用，要使用它们的中断保护等价函数：vTaskNotifyGiveFromISR()和xTaskNotifyFromISR()。
 				 API函数xTaskNotifyTake()有两种方法处理任务的通知值，一种方法是在函数退出时将通知值清零，这种方法适用于实现二进制信号量；另外一种方法是在函数退出时将通知值减1，这种方法适用于实现计数信号量。
 				 如果RTOS任务的通知值为0，使用xTaskNotifyTake()可以可选的使任务进入阻塞状态，直到该任务的通知值不为0。进入阻塞的任务不消耗CPU时间。
 	****************************************************************************/
@@ -4736,25 +4734,24 @@ TickType_t uxReturn;
 	{
 	uint32_t ulReturn;
 
-		taskENTER_CRITICAL();	//进入临界区
+		taskENTER_CRITICAL();
 		{
 			/* Only block if the notification count is not already non-zero. */
-			/* 如果当前任务的通知值为0 才进行阻塞操作*/		
 			if( pxCurrentTCB->ulNotifiedValue == 0UL )
 			{
 				/* Mark this task as waiting for a notification. */
-				pxCurrentTCB->ucNotifyState = taskWAITING_NOTIFICATION;	//任务通知状态设置为等待通知
+				pxCurrentTCB->ucNotifyState = taskWAITING_NOTIFICATION;
 
-				if( xTicksToWait > ( TickType_t ) 0 )	//如果有等待时间
+				if( xTicksToWait > ( TickType_t ) 0 )
 				{
-					prvAddCurrentTaskToDelayedList( xTicksToWait, pdTRUE );	//将当前任务加入到延时列表中
+					prvAddCurrentTaskToDelayedList( xTicksToWait, pdTRUE );
 					traceTASK_NOTIFY_TAKE_BLOCK();
 
 					/* All ports are written to allow a yield in a critical
 					section (some will yield immediately, others wait until the
 					critical section exits) - but it is not something that
 					application code should ever do. */
-					portYIELD_WITHIN_API();	//触发pendsv中断 退出临界区后切换上下文
+					portYIELD_WITHIN_API();
 				}
 				else
 				{
@@ -4766,22 +4763,20 @@ TickType_t uxReturn;
 				mtCOVERAGE_TEST_MARKER();
 			}
 		}
-		taskEXIT_CRITICAL();	//退出临界区 
-		
-		/* 注意： 这里再执行到当前函数时 应该是延时到了或者是被其他任务唤醒了 */
-		taskENTER_CRITICAL();	//进入临界区
+		taskEXIT_CRITICAL();
+
+		taskENTER_CRITICAL();
 		{
 			traceTASK_NOTIFY_TAKE();
-			ulReturn = pxCurrentTCB->ulNotifiedValue;	//获取任务通知值
+			ulReturn = pxCurrentTCB->ulNotifiedValue;
 
-			if( ulReturn != 0UL )	//如果任务的通知值不为0
+			if( ulReturn != 0UL )
 			{
-				/* 如果是当二值信号量来使用 则将任务通知值置零*/
 				if( xClearCountOnExit != pdFALSE )
 				{
 					pxCurrentTCB->ulNotifiedValue = 0UL;
 				}
-				else /* 否则就是当计数信号量来使用 将任务通知值减一*/
+				else
 				{
 					pxCurrentTCB->ulNotifiedValue = ulReturn - ( uint32_t ) 1;
 				}
@@ -4791,9 +4786,9 @@ TickType_t uxReturn;
 				mtCOVERAGE_TEST_MARKER();
 			}
 
-			pxCurrentTCB->ucNotifyState = taskNOT_WAITING_NOTIFICATION;	//设置当前任务通知状态为不需要等待通知
+			pxCurrentTCB->ucNotifyState = taskNOT_WAITING_NOTIFICATION;
 		}
-		taskEXIT_CRITICAL();	//退出临界区
+		taskEXIT_CRITICAL();
 
 		return ulReturn;
 	}
@@ -4810,38 +4805,36 @@ TickType_t uxReturn;
 				 pulNotificationValue[IN]: 用于向外回传任务的通知值。这个通知值在参数ulBitsToClearOnExit起作用前将通知值拷贝到*pulNotificationValue中。如果不需要返回任务的通知值，这里设置成NULL。
 				 xTicksToWait[IN]: 因等待通知而进入阻塞状态的最大时间。时间单位为系统节拍周期。宏pdMS_TO_TICKS用于将指定的毫秒时间转化为相应的系统节拍数。
 	* 返 回 值： 如果接收到通知，返回pdTRUE，如果API函数xTaskNotifyWait()等待超时，返回pdFALSE。
-	* 函数说明：      如果打算使用RTOS任务通知实现轻量级的二进制或计数信号量，推荐使用API函数ulTaskNotifyTake()来代替本函数。
+	* 函数说明：    如果打算使用RTOS任务通知实现轻量级的二进制或计数信号量，推荐使用API函数ulTaskNotifyTake()来代替本函数。
 	****************************************************************************/
 
 	BaseType_t xTaskNotifyWait( uint32_t ulBitsToClearOnEntry, uint32_t ulBitsToClearOnExit, uint32_t *pulNotificationValue, TickType_t xTicksToWait )
 	{
 	BaseType_t xReturn;
 
-		taskENTER_CRITICAL();	//进入临界区
+		taskENTER_CRITICAL();
 		{
 			/* Only block if a notification is not already pending. */
-			/* 只有任务没有等待通知 才将任务阻塞*/
 			if( pxCurrentTCB->ucNotifyState != taskNOTIFICATION_RECEIVED )
 			{
 				/* Clear bits in the task's notification value as bits may get
 				set	by the notifying task or interrupt.  This can be used to
 				clear the value to zero. */
-				/* 先将ulBitsToClearOnEntry取反 然后和任务通知值按位与 用于将任务通知值得某些位清零 */
 				pxCurrentTCB->ulNotifiedValue &= ~ulBitsToClearOnEntry;
 
 				/* Mark this task as waiting for a notification. */
-				pxCurrentTCB->ucNotifyState = taskWAITING_NOTIFICATION;	//标志当前任务在等待通知
+				pxCurrentTCB->ucNotifyState = taskWAITING_NOTIFICATION;
 
-				if( xTicksToWait > ( TickType_t ) 0 )	//如果设置了等待时间
+				if( xTicksToWait > ( TickType_t ) 0 )
 				{
-					prvAddCurrentTaskToDelayedList( xTicksToWait, pdTRUE );	//将当前任务加入到延时列表中
+					prvAddCurrentTaskToDelayedList( xTicksToWait, pdTRUE );
 					traceTASK_NOTIFY_WAIT_BLOCK();
 
 					/* All ports are written to allow a yield in a critical
 					section (some will yield immediately, others wait until the
 					critical section exits) - but it is not something that
 					application code should ever do. */
-					portYIELD_WITHIN_API();		//退出临界区后执行上下文切换
+					portYIELD_WITHIN_API();
 				}
 				else
 				{
@@ -4853,14 +4846,13 @@ TickType_t uxReturn;
 				mtCOVERAGE_TEST_MARKER();
 			}
 		}
-		taskEXIT_CRITICAL();	//退出临界区
-		
-		/* 注意： 到这里说明其他任务或者中断给此任务发了任务通知 现在开始继续处理 */
-		taskENTER_CRITICAL();	//进入临界区
+		taskEXIT_CRITICAL();
+
+		taskENTER_CRITICAL();
 		{
 			traceTASK_NOTIFY_WAIT();
 
-			if( pulNotificationValue != NULL ) //返回当前的任务通知值 后续有可能会更改
+			if( pulNotificationValue != NULL )
 			{
 				/* Output the current notification value, which may or may not
 				have changed. */
@@ -4871,25 +4863,22 @@ TickType_t uxReturn;
 			blocked state (because a notification was already pending) or the
 			task unblocked because of a notification.  Otherwise the task
 			unblocked because of a timeout. */
-			/* 如果是因为等待超时 返回pdFALSE*/
 			if( pxCurrentTCB->ucNotifyState != taskNOTIFICATION_RECEIVED )
 			{
 				/* A notification was not received. */
 				xReturn = pdFALSE;
 			}
 			else
-			{	
-				/* 如果确实是收到了任务通知 */
+			{
 				/* A notification was already pending or a notification was
 				received while the task was waiting. */
-				/* 先将ulBitsToClearOnExit取反然后与任务通知值按位与 用于将任务通知值得某些位清零 */
 				pxCurrentTCB->ulNotifiedValue &= ~ulBitsToClearOnExit;
 				xReturn = pdTRUE;
 			}
 
-			pxCurrentTCB->ucNotifyState = taskNOT_WAITING_NOTIFICATION;	//标志当前任务没有在等待通知
+			pxCurrentTCB->ucNotifyState = taskNOT_WAITING_NOTIFICATION;
 		}
-		taskEXIT_CRITICAL();	//退出临界区
+		taskEXIT_CRITICAL();
 
 		return xReturn;
 	}
@@ -4918,42 +4907,37 @@ TickType_t uxReturn;
 		configASSERT( xTaskToNotify );
 		pxTCB = xTaskToNotify;
 
-		taskENTER_CRITICAL();	//进入临界区
+		taskENTER_CRITICAL();
 		{
 			if( pulPreviousNotificationValue != NULL )
 			{
-				*pulPreviousNotificationValue = pxTCB->ulNotifiedValue;	//保存当前通知值 后续有可能会更新
+				*pulPreviousNotificationValue = pxTCB->ulNotifiedValue;
 			}
 
-			ucOriginalNotifyState = pxTCB->ucNotifyState;	//原始通知值
+			ucOriginalNotifyState = pxTCB->ucNotifyState;
 
-			pxTCB->ucNotifyState = taskNOTIFICATION_RECEIVED;	//标记已经接收到通知值
-			/* 根据通知方法不通修改该通知值不同*/
+			pxTCB->ucNotifyState = taskNOTIFICATION_RECEIVED;
+
 			switch( eAction )
 			{
 				case eSetBits:
-					/* 被通知的任务按位或上通知值，这种方法在一定场景下可以替代时间组 但是速度更快 */
-					pxTCB->ulNotifiedValue |= ulValue;	
+					pxTCB->ulNotifiedValue |= ulValue;
 					break;
 
 				case eIncrement	:
-					/* 被通知任务值加一*/
 					( pxTCB->ulNotifiedValue )++;
 					break;
 
 				case eSetValueWithOverwrite	:
-					/* 被通知任务值设置为ulValue */
 					pxTCB->ulNotifiedValue = ulValue;
 					break;
 
 				case eSetValueWithoutOverwrite :
-					/* 这种方法在一定的场景下可以替代长度为1的队列 但是速度更快 */
-					/* 如果被通知的任务当前没有通知值 则设置通知值为ulValue */
 					if( ucOriginalNotifyState != taskNOTIFICATION_RECEIVED )
 					{
 						pxTCB->ulNotifiedValue = ulValue;
 					}
-					else	/* 如果通知值没有被取走又来了通知值 返回pdFail */
+					else
 					{
 						/* The value could not be written to the task. */
 						xReturn = pdFAIL;
@@ -4961,7 +4945,6 @@ TickType_t uxReturn;
 					break;
 
 				case eNoAction:
-					/* 发送通知但是不更新通知值 */
 					/* The task is being notified without its notify value being
 					updated. */
 					break;
@@ -4979,7 +4962,6 @@ TickType_t uxReturn;
 
 			/* If the task is in the blocked state specifically to wait for a
 			notification then unblock it now. */
-			/* 如果被通知的任务因为等待通知而阻塞 现在就把它解除阻塞 */
 			if( ucOriginalNotifyState == taskWAITING_NOTIFICATION )
 			{
 				( void ) uxListRemove( &( pxTCB->xStateListItem ) );
@@ -5003,12 +4985,12 @@ TickType_t uxReturn;
 					prvResetNextTaskUnblockTime();
 				}
 				#endif
-				/* 如果解除阻塞的任务优先级大于当前任务的优先级 则执行一次任务切换 */
+
 				if( pxTCB->uxPriority > pxCurrentTCB->uxPriority )
 				{
 					/* The notified task has a priority above the currently
 					executing task so a yield is required. */
-					taskYIELD_IF_USING_PREEMPTION();	//退出临界区后会执行一次上下文切换
+					taskYIELD_IF_USING_PREEMPTION();
 				}
 				else
 				{
@@ -5020,7 +5002,7 @@ TickType_t uxReturn;
 				mtCOVERAGE_TEST_MARKER();
 			}
 		}
-		taskEXIT_CRITICAL();	
+		taskEXIT_CRITICAL();
 
 		return xReturn;
 	}
@@ -5158,14 +5140,6 @@ TickType_t uxReturn;
 /*-----------------------------------------------------------*/
 
 #if( configUSE_TASK_NOTIFICATIONS == 1 )
-	/***********************************************************************
-	* 函数名称： vTaskNotifyGiveFromISR
-	* 函数功能： 带中断保护的任务通知函数
-	* 输入参数： xTaskToNotify[IN]: 被通知的任务句柄
-				 pxHigherPriorityTaskWoken[OUT]:
-	* 返 回 值： 无
-	* 函数说明： 
-	****************************************************************************/
 
 	void vTaskNotifyGiveFromISR( TaskHandle_t xTaskToNotify, BaseType_t *pxHigherPriorityTaskWoken )
 	{
@@ -5195,25 +5169,24 @@ TickType_t uxReturn;
 
 		pxTCB = xTaskToNotify;
 
-		uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();	//进入临界区
+		uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
 		{
-			ucOriginalNotifyState = pxTCB->ucNotifyState;	//被通知任务的原始任务通知状态
-			pxTCB->ucNotifyState = taskNOTIFICATION_RECEIVED;	//被通知任务通知状态设置为已收到
+			ucOriginalNotifyState = pxTCB->ucNotifyState;
+			pxTCB->ucNotifyState = taskNOTIFICATION_RECEIVED;
 
 			/* 'Giving' is equivalent to incrementing a count in a counting
 			semaphore. */
-			( pxTCB->ulNotifiedValue )++;	//任务通知值加1
+			( pxTCB->ulNotifiedValue )++;
 
 			traceTASK_NOTIFY_GIVE_FROM_ISR();
 
 			/* If the task is in the blocked state specifically to wait for a
 			notification then unblock it now. */
-			/* 如果被通知任务阻塞等待通知 */
 			if( ucOriginalNotifyState == taskWAITING_NOTIFICATION )
 			{
 				/* The task should not have been on an event list. */
 				configASSERT( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) == NULL );
-				/* 如果调度器正常 将任务放入就绪列表*/
+
 				if( uxSchedulerSuspended == ( UBaseType_t ) pdFALSE )
 				{
 					( void ) uxListRemove( &( pxTCB->xStateListItem ) );
@@ -5223,15 +5196,13 @@ TickType_t uxReturn;
 				{
 					/* The delayed and ready lists cannot be accessed, so hold
 					this task pending until the scheduler is resumed. */
-					/* 调度器还没有准备好 将任务放入挂起就绪列表 */
 					vListInsertEnd( &( xPendingReadyList ), &( pxTCB->xEventListItem ) );
 				}
-				/* 如果被通知的任务优先级大于当前任务的优先级 */
+
 				if( pxTCB->uxPriority > pxCurrentTCB->uxPriority )
 				{
 					/* The notified task has a priority above the currently
 					executing task so a yield is required. */
-					/* 设置手动切换标志 */
 					if( pxHigherPriorityTaskWoken != NULL )
 					{
 						*pxHigherPriorityTaskWoken = pdTRUE;
@@ -5240,7 +5211,7 @@ TickType_t uxReturn;
 					/* Mark that a yield is pending in case the user is not
 					using the "xHigherPriorityTaskWoken" parameter in an ISR
 					safe FreeRTOS function. */
-					xYieldPending = pdTRUE;		//自动切换标志也置位 防止用户没有手动切换
+					xYieldPending = pdTRUE;
 				}
 				else
 				{
@@ -5248,7 +5219,7 @@ TickType_t uxReturn;
 				}
 			}
 		}
-		portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );	//退出临界区
+		portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
 	}
 
 #endif /* configUSE_TASK_NOTIFICATIONS */

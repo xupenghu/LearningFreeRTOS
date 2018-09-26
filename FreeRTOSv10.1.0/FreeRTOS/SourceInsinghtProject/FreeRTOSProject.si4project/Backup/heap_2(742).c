@@ -33,10 +33,6 @@
  *
  * See heap_1.c, heap_3.c and heap_4.c for alternative implementations, and the
  * memory management pages of http://www.FreeRTOS.org for more information.
- * 这个内存管理策略使用一个最佳匹配算法，允许释放之前分配的内存块，但是它不会把相邻的内存块合并成一个更大的内存块
- * 这样就会造成内存碎片。所以这个内存分配策略适合重复的分配和删除具有相同的堆栈空间的信号量、任务、队列等，并且不考虑内存碎片。
- * 这个内存分配策略不适合分配和释放随机字节的应用程序，因为频繁随机分配和释放会造成大量内存碎片，最终会耗尽内存。
- *
  */
 #include <stdlib.h>
 
@@ -76,20 +72,20 @@ static void prvHeapInit( void );
 of their size. */
 typedef struct A_BLOCK_LINK
 {
-	struct A_BLOCK_LINK *pxNextFreeBlock;	/* 指向列表中下一个空闲快 << The next free block in the list. */
-	size_t xBlockSize;						/* 当前空闲快的大小 包括链表结构的大小 所以要 + 8bytes<< The size of the free block. */
+	struct A_BLOCK_LINK *pxNextFreeBlock;	/*<< The next free block in the list. */
+	size_t xBlockSize;						/*<< The size of the free block. */
 } BlockLink_t;
 
 
-static const uint16_t heapSTRUCT_SIZE	= ( ( sizeof ( BlockLink_t ) + ( portBYTE_ALIGNMENT - 1 ) ) & ~portBYTE_ALIGNMENT_MASK );	//内存分配列表结构大小
-#define heapMINIMUM_BLOCK_SIZE	( ( size_t ) ( heapSTRUCT_SIZE * 2 ) )	//最小分配内存块大小
+static const uint16_t heapSTRUCT_SIZE	= ( ( sizeof ( BlockLink_t ) + ( portBYTE_ALIGNMENT - 1 ) ) & ~portBYTE_ALIGNMENT_MASK );
+#define heapMINIMUM_BLOCK_SIZE	( ( size_t ) ( heapSTRUCT_SIZE * 2 ) )
 
 /* Create a couple of list links to mark the start and end of the list. */
-static BlockLink_t xStart, xEnd;	//用来标记空闲内存块的起始和结束
+static BlockLink_t xStart, xEnd;
 
 /* Keeps track of the number of free bytes remaining, but says nothing about
 fragmentation. */
-static size_t xFreeBytesRemaining = configADJUSTED_HEAP_SIZE; //未分配的内存堆大小 
+static size_t xFreeBytesRemaining = configADJUSTED_HEAP_SIZE;
 
 /* STATIC FUNCTIONS ARE DEFINED AS MACROS TO MINIMIZE THE FUNCTION CALL DEPTH. */
 
@@ -98,13 +94,6 @@ static size_t xFreeBytesRemaining = configADJUSTED_HEAP_SIZE; //未分配的内�
  * the block.  Small blocks at the start of the list and large blocks at the end
  * of the list.
  */
-/***********************************************************************
-* 函数名称： prvInsertBlockIntoFreeList
-* 函数功能： 将当前链表插入到空闲链表中去
-* 输入参数： pxBlockToInsert[IN] : 待插入的链表
-* 返 回 值： 无
-* 函数说明： 按照内存空间大小排序插入
-****************************************************************************/
 #define prvInsertBlockIntoFreeList( pxBlockToInsert )								\
 {																					\
 BlockLink_t *pxIterator;															\
@@ -126,26 +115,16 @@ size_t xBlockSize;																	\
 }
 /*-----------------------------------------------------------*/
 
-/*-----------------------------------------------------------*/
-/***********************************************************************
-* 函数名称： pvPortMalloc
-* 函数功能： 内存申请函数
-* 输入参数： xWantedSize[IN]: 需要获取的内存大小 单位bytes
-* 返 回 值： 申请成功 返回申请到的内存首地址 申请失败返回NULL
-* 函数说明： 内存申请过程中会挂起调度器 
-****************************************************************************/
-
 void *pvPortMalloc( size_t xWantedSize )
 {
-BlockLink_t *pxBlock, *pxPreviousBlock, *pxNewBlockLink; //定义三个链表结构用来查找合适的空闲内存块返回
-static BaseType_t xHeapHasBeenInitialised = pdFALSE;	//堆空间被初始化标记
-void *pvReturn = NULL;	//返回给用户可用内存空间起始地址
+BlockLink_t *pxBlock, *pxPreviousBlock, *pxNewBlockLink;
+static BaseType_t xHeapHasBeenInitialised = pdFALSE;
+void *pvReturn = NULL;
 
-	vTaskSuspendAll();	//挂起调度器
+	vTaskSuspendAll();
 	{
 		/* If this is the first call to malloc then the heap will require
 		initialisation to setup the list of free blocks. */
-		/* 如果是第一次调用该函数 则初始化堆空间 */
 		if( xHeapHasBeenInitialised == pdFALSE )
 		{
 			prvHeapInit();
@@ -156,24 +135,22 @@ void *pvReturn = NULL;	//返回给用户可用内存空间起始地址
 		structure in addition to the requested amount of bytes. */
 		if( xWantedSize > 0 )
 		{
-			xWantedSize += heapSTRUCT_SIZE;	//申请的内存空间包括结构体链表所占的空间
+			xWantedSize += heapSTRUCT_SIZE;
 
 			/* Ensure that blocks are always aligned to the required number of bytes. */
-			/* 内存对齐 */
 			if( ( xWantedSize & portBYTE_ALIGNMENT_MASK ) != 0 )
 			{
 				/* Byte alignment required. */
 				xWantedSize += ( portBYTE_ALIGNMENT - ( xWantedSize & portBYTE_ALIGNMENT_MASK ) );
 			}
 		}
-		/* 防止越界 */
+
 		if( ( xWantedSize > 0 ) && ( xWantedSize < configADJUSTED_HEAP_SIZE ) )
 		{
 			/* Blocks are stored in byte order - traverse the list from the start
 			(smallest) block until one of adequate size is found. */
 			pxPreviousBlock = &xStart;
 			pxBlock = xStart.pxNextFreeBlock;
-			/* 遍历找到合适的大小内存块 */
 			while( ( pxBlock->xBlockSize < xWantedSize ) && ( pxBlock->pxNextFreeBlock != NULL ) )
 			{
 				pxPreviousBlock = pxBlock;
@@ -181,11 +158,10 @@ void *pvReturn = NULL;	//返回给用户可用内存空间起始地址
 			}
 
 			/* If we found the end marker then a block of adequate size was not found. */
-			if( pxBlock != &xEnd ) //如果找到了合适的内存块
+			if( pxBlock != &xEnd )
 			{
 				/* Return the memory space - jumping over the BlockLink_t structure
 				at its start. */
-				/* 这个内存块返回给用户 注意要去除头部的链表空间 */
 				pvReturn = ( void * ) ( ( ( uint8_t * ) pxPreviousBlock->pxNextFreeBlock ) + heapSTRUCT_SIZE );
 
 				/* This block is being returned for use so must be taken out of the
@@ -193,33 +169,30 @@ void *pvReturn = NULL;	//返回给用户可用内存空间起始地址
 				pxPreviousBlock->pxNextFreeBlock = pxBlock->pxNextFreeBlock;
 
 				/* If the block is larger than required it can be split into two. */
-				/* 如果返回给用户的空间很大 则分为两个 一个给用户 一个插入到新的空闲链表中去 */
 				if( ( pxBlock->xBlockSize - xWantedSize ) > heapMINIMUM_BLOCK_SIZE )
 				{
 					/* This block is to be split into two.  Create a new block
 					following the number of bytes requested. The void cast is
 					used to prevent byte alignment warnings from the compiler. */
-					/* 新的空闲块头部强制转换为链表结构 */
 					pxNewBlockLink = ( void * ) ( ( ( uint8_t * ) pxBlock ) + xWantedSize );
 
 					/* Calculate the sizes of two blocks split from the single
 					block. */
-					/* 获取新的空闲快的大小 */
 					pxNewBlockLink->xBlockSize = pxBlock->xBlockSize - xWantedSize;
-					pxBlock->xBlockSize = xWantedSize;	//给用户返回的空间大小
+					pxBlock->xBlockSize = xWantedSize;
 
 					/* Insert the new block into the list of free blocks. */
 					prvInsertBlockIntoFreeList( ( pxNewBlockLink ) );
 				}
 
-				xFreeBytesRemaining -= pxBlock->xBlockSize;	//更新总的剩余空间减去刚分配给用户的空间
+				xFreeBytesRemaining -= pxBlock->xBlockSize;
 			}
 		}
 
 		traceMALLOC( pvReturn, xWantedSize );
 	}
 	( void ) xTaskResumeAll();
-	/* 如果定义了内存分配出错钩子函数 则当内存分配出错时执行 */
+
 	#if( configUSE_MALLOC_FAILED_HOOK == 1 )
 	{
 		if( pvReturn == NULL )
@@ -233,44 +206,37 @@ void *pvReturn = NULL;	//返回给用户可用内存空间起始地址
 	return pvReturn;
 }
 /*-----------------------------------------------------------*/
-/***********************************************************************
-* 函数名称： vPortFree
-* 函数功能： 内存释放函数
-* 输入参数： 需要释放的内存的首地址
-* 返 回 值： 无
-* 函数说明： 根据传入的内存空间 找到相应的内存控制链表 然后将该链表插入到空闲链表中去
-****************************************************************************/
 
 void vPortFree( void *pv )
 {
 uint8_t *puc = ( uint8_t * ) pv;
 BlockLink_t *pxLink;
 
-	if( pv != NULL )	//如果传入地址空间有效
+	if( pv != NULL )
 	{
 		/* The memory being freed will have an BlockLink_t structure immediately
 		before it. */
-		puc -= heapSTRUCT_SIZE;	//指针移到内存控制链表的起始地址
+		puc -= heapSTRUCT_SIZE;
 
 		/* This unexpected casting is to keep some compilers from issuing
 		byte alignment warnings. */
-		pxLink = ( void * ) puc;	
+		pxLink = ( void * ) puc;
 
-		vTaskSuspendAll();	//挂起任务调度
+		vTaskSuspendAll();
 		{
 			/* Add this block to the list of free blocks. */
-			prvInsertBlockIntoFreeList( ( ( BlockLink_t * ) pxLink ) ); //插入到空闲内存控制块中
-			xFreeBytesRemaining += pxLink->xBlockSize;	//更新总的可用内存加上刚才回收的内存
+			prvInsertBlockIntoFreeList( ( ( BlockLink_t * ) pxLink ) );
+			xFreeBytesRemaining += pxLink->xBlockSize;
 			traceFREE( pv, pxLink->xBlockSize );
 		}
-		( void ) xTaskResumeAll();	//恢复任务调度
+		( void ) xTaskResumeAll();
 	}
 }
 /*-----------------------------------------------------------*/
 
 size_t xPortGetFreeHeapSize( void )
 {
-	return xFreeBytesRemaining;	//获取未分配的内存堆大小
+	return xFreeBytesRemaining;
 }
 /*-----------------------------------------------------------*/
 
@@ -279,26 +245,18 @@ void vPortInitialiseBlocks( void )
 	/* This just exists to keep the linker quiet. */
 }
 /*-----------------------------------------------------------*/
-/***********************************************************************
-* 函数名称： prvHeapInit
-* 函数功能： 堆空间初始化
-* 输入参数： 无
-* 返 回 值： 无
-* 函数说明： 主要是初始化xStart & xEnd 使得空闲堆空间组成一个以xStart 为首 以xEnd为尾的链表
-****************************************************************************/
 
 static void prvHeapInit( void )
 {
-BlockLink_t *pxFirstFreeBlock;	//第一条空闲堆空间
+BlockLink_t *pxFirstFreeBlock;
 uint8_t *pucAlignedHeap;
 
 	/* Ensure the heap starts on a correctly aligned boundary. */
-	/* 内存对齐后指向的空间*/
 	pucAlignedHeap = ( uint8_t * ) ( ( ( portPOINTER_SIZE_TYPE ) &ucHeap[ portBYTE_ALIGNMENT ] ) & ( ~( ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) ) );
 
 	/* xStart is used to hold a pointer to the first item in the list of free
 	blocks.  The void cast is used to prevent compiler warnings. */
-	xStart.pxNextFreeBlock = ( void * ) pucAlignedHeap; 
+	xStart.pxNextFreeBlock = ( void * ) pucAlignedHeap;
 	xStart.xBlockSize = ( size_t ) 0;
 
 	/* xEnd is used to mark the end of the list of free blocks. */

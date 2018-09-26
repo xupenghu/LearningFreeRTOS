@@ -35,9 +35,6 @@
  *
  * See heap_1.c, heap_2.c and heap_4.c for alternative implementations, and the
  * memory management pages of http://www.FreeRTOS.org for more information.
- * 这种内存分配策略简单的封装了c库函数malloc和free
- * 这种内存分配策略不在需要定义一个大的数组来管理内存，而是需要编译器设置内存堆空间，一般在启动代码中设置
- * 因此宏configTOTAL_HEAP_SIZE对这种内存管理策略是无效的。
  */
 
 #include <stdlib.h>
@@ -62,12 +59,12 @@ void *pvPortMalloc( size_t xWantedSize )
 {
 void *pvReturn;
 
-	vTaskSuspendAll();  //挂起调度器
+	vTaskSuspendAll();
 	{
 		pvReturn = malloc( xWantedSize );
 		traceMALLOC( pvReturn, xWantedSize );
 	}
-	( void ) xTaskResumeAll();	//恢复调度器
+	( void ) xTaskResumeAll();
 
 	#if( configUSE_MALLOC_FAILED_HOOK == 1 )
 	{
