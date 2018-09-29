@@ -231,13 +231,6 @@ static void prvTaskExitError( void )
 	for( ;; );
 }
 /*-----------------------------------------------------------*/
-/***********************************************************************
-* 函数名称： vPortSVCHandler
-* 函数功能： 开启第一个任务
-* 输入参数： 无
-* 返 回 值： 无
-* 函数说明： 
-****************************************************************************/
 
 __asm void vPortSVCHandler( void )
 {
@@ -308,13 +301,6 @@ __asm void prvEnableVFP( void )
 /*
  * See header file for description.
  */
- /***********************************************************************
-* 函数名称： xPortStartScheduler
-* 函数功能： 开始任务调度
-* 输入参数： 无
-* 返 回 值： 
-* 函数说明： 
-****************************************************************************/
 BaseType_t xPortStartScheduler( void )
 {
 	/* configMAX_SYSCALL_INTERRUPT_PRIORITY must not be set to 0.
@@ -425,13 +411,6 @@ void vPortEndScheduler( void )
 	configASSERT( uxCriticalNesting == 1000UL );
 }
 /*-----------------------------------------------------------*/
-/***********************************************************************
-* 函数名称： vPortEnterCritical
-* 函数功能： 进入临界区
-* 输入参数： 无
-* 返 回 值： 无
-* 函数说明： 
-****************************************************************************/
 
 void vPortEnterCritical( void )
 {
@@ -449,13 +428,6 @@ void vPortEnterCritical( void )
 	}
 }
 /*-----------------------------------------------------------*/
-/***********************************************************************
-* 函数名称： vPortExitCritical
-* 函数功能： 退出临界区
-* 输入参数： 无
-* 返 回 值： 无
-* 函数说明： uxCriticalNesting减为0时打开中断 
-****************************************************************************/
 
 void vPortExitCritical( void )
 {
@@ -467,13 +439,6 @@ void vPortExitCritical( void )
 	}
 }
 /*-----------------------------------------------------------*/
-/***********************************************************************
-* 函数名称： xPortPendSVHandler
-* 函数功能： pendsv中断处理程序
-* 输入参数： 无
-* 返 回 值： 无
-* 函数说明： 该函数完成一次任务切换
-****************************************************************************/
 
 __asm void xPortPendSVHandler( void )
 {
@@ -544,13 +509,6 @@ __asm void xPortPendSVHandler( void )
 	bx r14
 }
 /*-----------------------------------------------------------*/
-/***********************************************************************
-* 函数名称： xPortSysTickHandler
-* 函数功能： 系统节拍中断处理函数
-* 输入参数： 无
-* 返 回 值： 无
-* 函数说明： 增加系统时钟节拍计数 如果有任务解除阻塞 则触发一次任务切换
-****************************************************************************/
 
 void xPortSysTickHandler( void )
 {
@@ -577,13 +535,6 @@ void xPortSysTickHandler( void )
 /*-----------------------------------------------------------*/
 
 #if( configUSE_TICKLESS_IDLE == 1 )
-	/***********************************************************************
-	* 函数名称： vPortSuppressTicksAndSleep
-	* 函数功能： 使rtos进入低功耗模式
-	* 输入参数： xExpectedIdleTime[IN]: 进入低功耗的时钟节拍数
-	* 返 回 值： 无
-	* 函数说明： 该函数是rots实现的低功耗函数 当然用户也可以自定义低功耗函数 
-	****************************************************************************/
 
 	__weak void vPortSuppressTicksAndSleep( TickType_t xExpectedIdleTime )
 	{
@@ -591,7 +542,6 @@ void xPortSysTickHandler( void )
 	TickType_t xModifiableIdleTime;
 
 		/* Make sure the SysTick reload value does not overflow the counter. */
-		/* 确保系统最大休眠时间低于允许的最大休眠时间 */
 		if( xExpectedIdleTime > xMaximumPossibleSuppressedTicks )
 		{
 			xExpectedIdleTime = xMaximumPossibleSuppressedTicks;
@@ -601,7 +551,6 @@ void xPortSysTickHandler( void )
 		is accounted for as best it can be, but using the tickless mode will
 		inevitably result in some tiny drift of the time maintained by the
 		kernel with respect to calendar time. */
-		/* 停止systick系统节拍 但是会有一些时间漂移 */
 		portNVIC_SYSTICK_CTRL_REG &= ~portNVIC_SYSTICK_ENABLE_BIT;
 
 		/* Calculate the reload value required to wait xExpectedIdleTime
@@ -656,14 +605,14 @@ void xPortSysTickHandler( void )
 			should not be executed again.  However, the original expected idle
 			time variable must remain unmodified, so a copy is taken. */
 			xModifiableIdleTime = xExpectedIdleTime;
-			configPRE_SLEEP_PROCESSING( xModifiableIdleTime );	//在执行睡眠操作前调用此函数 用户可以在此函数中关闭外设时钟等操作 如果不想让rtos进入睡眠模式 则在退出此函数前 将xModifiableIdleTime设置为0
+			configPRE_SLEEP_PROCESSING( xModifiableIdleTime );
 			if( xModifiableIdleTime > 0 )
 			{
 				__dsb( portSY_FULL_READ_WRITE );
 				__wfi();
 				__isb( portSY_FULL_READ_WRITE );
 			}
-			configPOST_SLEEP_PROCESSING( xExpectedIdleTime ); //退出睡眠函数后 此函数得到执行 在前面关闭的外设时钟等操作可以放在这里面重新打开
+			configPOST_SLEEP_PROCESSING( xExpectedIdleTime );
 
 			/* Re-enable interrupts to allow the interrupt that brought the MCU
 			out of sleep mode to execute immediately.  see comments above
@@ -741,7 +690,7 @@ void xPortSysTickHandler( void )
 			value. */
 			portNVIC_SYSTICK_CURRENT_VALUE_REG = 0UL;
 			portNVIC_SYSTICK_CTRL_REG |= portNVIC_SYSTICK_ENABLE_BIT;
-			vTaskStepTick( ulCompleteTickPeriods );	//调整系统时钟节拍 增加因为休眠而丢失的系统节拍数
+			vTaskStepTick( ulCompleteTickPeriods );
 			portNVIC_SYSTICK_LOAD_REG = ulTimerCountsForOneTick - 1UL;
 
 			/* Exit with interrpts enabled. */

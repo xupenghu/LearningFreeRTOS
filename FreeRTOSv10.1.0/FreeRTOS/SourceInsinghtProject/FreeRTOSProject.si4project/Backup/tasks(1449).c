@@ -146,13 +146,6 @@ configIDLE_TASK_NAME in FreeRTOSConfig.h. */
 	} /* taskRECORD_READY_PRIORITY */
 
 	/*-----------------------------------------------------------*/
-	/***********************************************************************
-	* 函数名称： taskSELECT_HIGHEST_PRIORITY_TASK
-	* 函数功能： 找到优先级最高的就绪任务
-	* 输入参数： 无
-	* 返 回 值： 无
-	* 函数说明： 这其实是一个宏定义 uxTopPriority记录了当前
-	****************************************************************************/
 
 	#define taskSELECT_HIGHEST_PRIORITY_TASK()															\
 	{																									\
@@ -222,8 +215,6 @@ configIDLE_TASK_NAME in FreeRTOSConfig.h. */
 
 /* pxDelayedTaskList and pxOverflowDelayedTaskList are switched when the tick
 count overflows. */
-/* 当系统节拍中断次数计数器xTickCount溢出时，必须将延时列表指针pxDelayedTaskList和
- * 溢出延时列表指针pxOverflowDelayedTaskList交换以便正确处理延时列表 */
 #define taskSWITCH_DELAYED_LISTS()																	\
 {																									\
 	List_t *pxTemp;																					\
@@ -235,7 +226,6 @@ count overflows. */
 	pxDelayedTaskList = pxOverflowDelayedTaskList;													\
 	pxOverflowDelayedTaskList = pxTemp;																\
 	xNumOfOverflows++;																				\
-	/* 重新获取下一次解除阻塞的时间*/																				\
 	prvResetNextTaskUnblockTime();																	\
 }
 
@@ -390,15 +380,15 @@ the errno of the currently running task. */
 #endif
 
 /* Other file private variables. --------------------------------*/
-PRIVILEGED_DATA static volatile UBaseType_t uxCurrentNumberOfTasks 	= ( UBaseType_t ) 0U;	//当前任务数
-PRIVILEGED_DATA static volatile TickType_t xTickCount 				= ( TickType_t ) configINITIAL_TICK_COUNT;	//记录当前系统节拍中断数
+PRIVILEGED_DATA static volatile UBaseType_t uxCurrentNumberOfTasks 	= ( UBaseType_t ) 0U;
+PRIVILEGED_DATA static volatile TickType_t xTickCount 				= ( TickType_t ) configINITIAL_TICK_COUNT;
 PRIVILEGED_DATA static volatile UBaseType_t uxTopReadyPriority 		= tskIDLE_PRIORITY;	//记录处于就绪状态的最高任务优先级 参与任务调度的关键
-PRIVILEGED_DATA static volatile BaseType_t xSchedulerRunning 		= pdFALSE;	//标记调度器是否在运行
+PRIVILEGED_DATA static volatile BaseType_t xSchedulerRunning 		= pdFALSE;
 PRIVILEGED_DATA static volatile UBaseType_t uxPendedTicks 			= ( UBaseType_t ) 0U;
-PRIVILEGED_DATA static volatile BaseType_t xYieldPending 			= pdFALSE;		//标记是否需要一次pendsv触发 执行上下文切换
-PRIVILEGED_DATA static volatile BaseType_t xNumOfOverflows 			= ( BaseType_t ) 0;	//xTickCount计数溢出时会更新此值
+PRIVILEGED_DATA static volatile BaseType_t xYieldPending 			= pdFALSE;
+PRIVILEGED_DATA static volatile BaseType_t xNumOfOverflows 			= ( BaseType_t ) 0;
 PRIVILEGED_DATA static UBaseType_t uxTaskNumber 					= ( UBaseType_t ) 0U;
-PRIVILEGED_DATA static volatile TickType_t xNextTaskUnblockTime		= ( TickType_t ) 0U; /* 下一个解除任务阻塞的时间  Initialised to portMAX_DELAY before the scheduler starts. */
+PRIVILEGED_DATA static volatile TickType_t xNextTaskUnblockTime		= ( TickType_t ) 0U; /* Initialised to portMAX_DELAY before the scheduler starts. */
 PRIVILEGED_DATA static TaskHandle_t xIdleTaskHandle					= NULL;			/*< Holds the handle of the idle task.  The idle task is created automatically when the scheduler is started. */
 
 /* Context switches are held pending while the scheduler is suspended.  Also,
@@ -409,7 +399,7 @@ moves the task's event list item into the xPendingReadyList, ready for the
 kernel to move the task from the pending ready list into the real ready list
 when the scheduler is unsuspended.  The pending ready list itself can only be
 accessed from a critical section. */
-PRIVILEGED_DATA static volatile UBaseType_t uxSchedulerSuspended	= ( UBaseType_t ) pdFALSE;	//调度器是否被挂起标志
+PRIVILEGED_DATA static volatile UBaseType_t uxSchedulerSuspended	= ( UBaseType_t ) pdFALSE;
 
 /*lint -restore */
 
@@ -1285,7 +1275,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB )
 	/***********************************************************************
 	* 函数名称： vTaskDelayUntil
 	* 函数功能： 绝对延时
-	* 输入参数： pxPreviousWakeTime[OUT] : 指针，指向一个变量，该变量保存任务最后一次解除阻塞的时间。第一次使用前，该变量必须初始化为当前时间。之后这个变量会在vTaskDelayUntil()函数内自动更新
+	* 输入参数： pxPreviousWakeTime[IN] : 指针，指向一个变量，该变量保存任务最后一次解除阻塞的时间。第一次使用前，该变量必须初始化为当前时间。之后这个变量会在vTaskDelayUntil()函数内自动更新
 	 			 xTimeIncrement[IN] : 周期循环时间。当时间等于(*pxPreviousWakeTime + xTimeIncrement)时，任务解除阻塞。如果不改变参数xTimeIncrement的值，调用该函数的任务会按照固定频率执行。
 	* 返 回 值： 无
 	* 函数说明： 该函数可用于周期性的执行某个任务，传入的参数pxPreviousWakeTime就是在实时修正需要延时的时间，以达到延时的准确性。
@@ -1300,18 +1290,15 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB )
 		configASSERT( ( xTimeIncrement > 0U ) );
 		configASSERT( uxSchedulerSuspended == 0 );
 
-		vTaskSuspendAll();	//挂起调度器
+		vTaskSuspendAll();
 		{
 			/* Minor optimisation.  The tick count cannot change in this
 			block. */
-			/* 记录当前系统时间 */
 			const TickType_t xConstTickCount = xTickCount;
 
 			/* Generate the tick time at which the task wants to wake. */
-			/* 计算任务下次唤醒时间 */
 			xTimeToWake = *pxPreviousWakeTime + xTimeIncrement;
-			/* *pxPreviousWakeTime 保存得是任务上次唤醒时间 唤醒后需要一定时间执行任务代码
-			 * 如果上次唤醒时间大于当前时间，说明节拍计数器溢出了 */
+
 			if( xConstTickCount < *pxPreviousWakeTime )
 			{
 				/* The tick count has overflowed since this function was
@@ -1319,7 +1306,6 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB )
 				actually delay is if the wake time has also	overflowed,
 				and the wake time is greater than the tick time.  When this
 				is the case it is as if neither time had overflowed. */
-				/* 只有当任务的延时时间大于任务主体代码执行时间 才会将任务挂接到延时列表 */
 				if( ( xTimeToWake < *pxPreviousWakeTime ) && ( xTimeToWake > xConstTickCount ) )
 				{
 					xShouldDelay = pdTRUE;
@@ -1334,7 +1320,6 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB )
 				/* The tick time has not overflowed.  In this case we will
 				delay if either the wake time has overflowed, and/or the
 				tick time is less than the wake time. */
-				/* 保证周期性延时时间大于任务主体代码执行时间 */
 				if( ( xTimeToWake < *pxPreviousWakeTime ) || ( xTimeToWake > xConstTickCount ) )
 				{
 					xShouldDelay = pdTRUE;
@@ -1346,7 +1331,6 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB )
 			}
 
 			/* Update the wake time ready for the next call. */
-			/* 更新下一次唤醒时间 为下一次调用做准备 */
 			*pxPreviousWakeTime = xTimeToWake;
 
 			if( xShouldDelay != pdFALSE )
@@ -1355,7 +1339,6 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB )
 
 				/* prvAddCurrentTaskToDelayedList() needs the block time, not
 				the time to wake, so subtract the current tick count. */
-				/* 将本任务加入到延时列表 注意阻塞时间不是以当前时间为参考 因此减去了当前系统节拍中断计数器值 */
 				prvAddCurrentTaskToDelayedList( xTimeToWake - xConstTickCount, pdFALSE );
 			}
 			else
@@ -1363,11 +1346,10 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB )
 				mtCOVERAGE_TEST_MARKER();
 			}
 		}
-		xAlreadyYielded = xTaskResumeAll();	//恢复调度器
+		xAlreadyYielded = xTaskResumeAll();
 
 		/* Force a reschedule if xTaskResumeAll has not already done so, we may
-		have put ourselves to sleep. */
-		/* 判断是否需要执行一次上下文切换 */
+		have put ourselves to sleep. */
 		if( xAlreadyYielded == pdFALSE )
 		{
 			portYIELD_WITHIN_API();
@@ -1385,11 +1367,9 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB )
 	/***********************************************************************
 	* 函数名称： vTaskDelay
 	* 函数功能： 延时
-	* 输入参数： xTicksToDelay[IN] : 需要延时的系统节拍数，注意这里的输入参数是系统节拍数，不是真实的延时时间，
-				 比如我们需要延时500ms，那么传入的参数应该是：500 / portTICK_RATE_MS
+	* 输入参数： xTicksToDelay[IN] : 需要延时的系统节拍数，注意这里的输入参数是系统节拍数，不是真实的延时时间，比如我们需要延时500ms，那么传入的参数应该是：500 / portTICK_RATE_MS
 	* 返 回 值： 无
-	* 函数说明： 系统调用该函数是从执行该函数开始算其延时时间，延时时间并不是精确的，会有一定的误差。
-				 在需要周期性延时时，不可以使用该函数来延时。
+	* 函数说明： 系统调用该函数是从执行该函数开始算其延时时间，延时时间并不是精确的，会有一定的误差。在需要周期性延时时，不可以使用该函数来延时。
 	****************************************************************************/
 
 	void vTaskDelay( const TickType_t xTicksToDelay )
@@ -1397,11 +1377,10 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB )
 	BaseType_t xAlreadyYielded = pdFALSE;
 
 		/* A delay time of zero just forces a reschedule. */
-		/* 如果延时时间不为0 则将当前任务加入到延时列表中去 */
 		if( xTicksToDelay > ( TickType_t ) 0U )
 		{
 			configASSERT( uxSchedulerSuspended == 0 );
-			vTaskSuspendAll();	//挂起调度器
+			vTaskSuspendAll();
 			{
 				traceTASK_DELAY();
 
@@ -1412,10 +1391,9 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB )
 
 				This task cannot be in an event list as it is the currently
 				executing task. */
-				/* 将当前任务加入到延时列表中去 */
 				prvAddCurrentTaskToDelayedList( xTicksToDelay, pdFALSE );
 			}
-			xAlreadyYielded = xTaskResumeAll();	//恢复调度器 并根据返回值确定是否需要进行一次调度
+			xAlreadyYielded = xTaskResumeAll();
 		}
 		else
 		{
@@ -1424,7 +1402,6 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB )
 
 		/* Force a reschedule if xTaskResumeAll has not already done so, we may
 		have put ourselves to sleep. */
-		/* 如果需要一次任务切换则切换之 */
 		if( xAlreadyYielded == pdFALSE )
 		{
 			portYIELD_WITHIN_API();
@@ -2848,13 +2825,6 @@ implementations require configUSE_TICKLESS_IDLE to be set to a value other than
 
 #endif /* INCLUDE_xTaskAbortDelay */
 /*----------------------------------------------------------*/
-/***********************************************************************
-* 函数名称： xTaskIncrementTick
-* 函数功能： 更新系统节拍中断计数器的值并判断是否需要进行任务切换
-* 输入参数： 无
-* 返 回 值： 如果返回pdFALSE 则说明不需要进行任务调度，否则执行一次上下文切换
-* 函数说明： 该函数在xPortSysTickHandler中被调用 用来更新系统节拍中断计数器和判断是否需要进行任务切换
-****************************************************************************/
 
 BaseType_t xTaskIncrementTick( void )
 {
@@ -2866,7 +2836,6 @@ BaseType_t xSwitchRequired = pdFALSE;
 	Increments the tick then checks to see if the new tick value will cause any
 	tasks to be unblocked. */
 	traceTASK_INCREMENT_TICK( xTickCount );
-	/* 如果调度器没有被挂起 */
 	if( uxSchedulerSuspended == ( UBaseType_t ) pdFALSE )
 	{
 		/* Minor optimisation.  The tick count cannot change in this
@@ -2875,8 +2844,8 @@ BaseType_t xSwitchRequired = pdFALSE;
 
 		/* Increment the RTOS tick, switching the delayed and overflowed
 		delayed lists if it wraps to 0. */
-		xTickCount = xConstTickCount;	//更新系统中断节拍计数器 
-		/* 如果溢出则交换延时列表 并重新更新下一个需要解除阻塞的任务的时间 */
+		xTickCount = xConstTickCount;
+
 		if( xConstTickCount == ( TickType_t ) 0U ) /*lint !e774 'if' does not always evaluate to false as it is looking for an overflow. */
 		{
 			taskSWITCH_DELAYED_LISTS();
@@ -2890,12 +2859,10 @@ BaseType_t xSwitchRequired = pdFALSE;
 		the	queue in the order of their wake time - meaning once one task
 		has been found whose block time has not expired there is no need to
 		look any further down the list. */
-		/* 如果当前系统节拍大于第一个需要被解除阻塞的任务的时间 则执行一次任务切换*/
 		if( xConstTickCount >= xNextTaskUnblockTime )
 		{
 			for( ;; )
 			{
-				/* 如果延时列表为空 说明没有需要等待延时的任务 则将下一个需要唤醒的任务的时间设置为最大 */
 				if( listLIST_IS_EMPTY( pxDelayedTaskList ) != pdFALSE )
 				{
 					/* The delayed list is empty.  Set xNextTaskUnblockTime
@@ -2912,10 +2879,9 @@ BaseType_t xSwitchRequired = pdFALSE;
 					item at the head of the delayed list.  This is the time
 					at which the task at the head of the delayed list must
 					be removed from the Blocked state. */
-					/* 获取延时列表的第一个列表项 延时列表是按照延时时间排列 第一个任务就是最先需要被唤醒的任务 */
 					pxTCB = listGET_OWNER_OF_HEAD_ENTRY( pxDelayedTaskList ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
-					xItemValue = listGET_LIST_ITEM_VALUE( &( pxTCB->xStateListItem ) ); //获取任务状态列表项的列表项值
-					/* 当延时还没有到期时 */
+					xItemValue = listGET_LIST_ITEM_VALUE( &( pxTCB->xStateListItem ) );
+
 					if( xConstTickCount < xItemValue )
 					{
 						/* It is not time to unblock this item yet, but the
@@ -2923,8 +2889,7 @@ BaseType_t xSwitchRequired = pdFALSE;
 						of the blocked list must be removed from the Blocked
 						state -	so record the item value in
 						xNextTaskUnblockTime. */
-						xNextTaskUnblockTime = xItemValue;	//更新下一次需要解除阻塞的时间
-						/* 退出当前函数 */
+						xNextTaskUnblockTime = xItemValue;
 						break; /*lint !e9011 Code structure here is deedmed easier to understand with multiple breaks. */
 					}
 					else
@@ -2933,12 +2898,10 @@ BaseType_t xSwitchRequired = pdFALSE;
 					}
 
 					/* It is time to remove the item from the Blocked state. */
-					/* 是时候将当前列表项从延时列表中移除了 */
 					( void ) uxListRemove( &( pxTCB->xStateListItem ) );
 
 					/* Is the task waiting on an event also?  If so remove
 					it from the event list. */
-					/* 如果当前任务还在等待其他什么事件，同样将该任务从状态列表中移除 表示超时到了*/
 					if( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) != NULL )
 					{
 						( void ) uxListRemove( &( pxTCB->xEventListItem ) );
@@ -2950,20 +2913,16 @@ BaseType_t xSwitchRequired = pdFALSE;
 
 					/* Place the unblocked task into the appropriate ready
 					list. */
-					/* 将解除阻塞的任务加入到就绪列表中去 */
-					/* 注意这里的就绪列表中有可能不会只增加一个任务 因为有可能存在延时时间相同的几个任务一起释放的情况*/
 					prvAddTaskToReadyList( pxTCB );
 
 					/* A task being unblocked cannot cause an immediate
 					context switch if preemption is turned off. */
-					/ *如果禁用抢占，则解除阻塞的任务不会导致立即上下文切换。*/
 					#if (  configUSE_PREEMPTION == 1 )
 					{
 						/* Preemption is on, but a context switch should
 						only be performed if the unblocked task has a
 						priority that is equal to or higher than the
 						currently executing task. */
-						/* 如果解除阻塞任务的优先级大于当前任务的优先级 则触发一次上下文切换 */
 						if( pxTCB->uxPriority >= pxCurrentTCB->uxPriority )
 						{
 							xSwitchRequired = pdTRUE;
@@ -2981,11 +2940,8 @@ BaseType_t xSwitchRequired = pdFALSE;
 		/* Tasks of equal priority to the currently running task will share
 		processing time (time slice) if preemption is on, and the application
 		writer has not explicitly turned time slicing off. */
-		/ *当前正在运行的任务具有相同优先级的任务将共享处理时间（时间片），如果抢占已打开，
-		  *并且应用程序编写者未明确关闭时间切片。*/
 		#if ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) )
-		{	
-			/* 有和当前任务优先级相同的任务 则执行时间片轮询调度策略 具体的寻找最高优先级任务的函数在PendSV中 */
+		{
 			if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ pxCurrentTCB->uxPriority ] ) ) > ( UBaseType_t ) 1 )
 			{
 				xSwitchRequired = pdTRUE;
@@ -3003,7 +2959,6 @@ BaseType_t xSwitchRequired = pdFALSE;
 			count is being unwound (when the scheduler is being unlocked). */
 			if( uxPendedTicks == ( UBaseType_t ) 0U )
 			{
-				/* 如果观其计数器为0 且打开了systick的钩子函数 则执行之*/
 				vApplicationTickHook();
 			}
 			else
@@ -3013,7 +2968,7 @@ BaseType_t xSwitchRequired = pdFALSE;
 		}
 		#endif /* configUSE_TICK_HOOK */
 	}
-	else	/* 调度器被挂起 任务会加入到 xPendingReadyList 列表中 */
+	else
 	{
 		++uxPendedTicks;
 
@@ -3021,7 +2976,6 @@ BaseType_t xSwitchRequired = pdFALSE;
 		scheduler is locked. */
 		#if ( configUSE_TICK_HOOK == 1 )
 		{
-			/* 如果时钟节拍中断钩子函数宏被打开 则执行时钟节拍中断钩子函数 这个函数要尽量简洁 */
 			vApplicationTickHook();
 		}
 		#endif
@@ -3029,7 +2983,6 @@ BaseType_t xSwitchRequired = pdFALSE;
 
 	#if ( configUSE_PREEMPTION == 1 )
 	{
-		/* 如果xYieldPending为真 则也执行一次上下文切换 */
 		if( xYieldPending != pdFALSE )
 		{
 			xSwitchRequired = pdTRUE;
@@ -3544,17 +3497,9 @@ void vTaskMissedYield( void )
  * void prvIdleTask( void *pvParameters );
  *
  */
- /***********************************************************************
-* 函数名称： portTASK_FUNCTION
-* 函数功能： 空闲任务
-* 输入参数： prvIdleTask[IN]: 函数名
-			 pvParameters[IN]: 参数
-* 返 回 值： 无
-* 函数说明： 这其实是一个宏 等效于void prvIdleTask( void *pvParameters )
-****************************************************************************/
 static portTASK_FUNCTION( prvIdleTask, pvParameters )
 {
-	/* Stop warnings. 防止编译器警告*/
+	/* Stop warnings. */
 	( void ) pvParameters;
 
 	/** THIS IS THE RTOS IDLE TASK - WHICH IS CREATED AUTOMATICALLY WHEN THE
@@ -3569,8 +3514,8 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 	{
 		/* See if any tasks have deleted themselves - if so then the idle task
 		is responsible for freeing the deleted task's TCB and stack. */
-		prvCheckTasksWaitingTermination();	//检查是否有被删除的任务 回收内存空间
-		/* 如果没有定义抢占式调度*/
+		prvCheckTasksWaitingTermination();
+
 		#if ( configUSE_PREEMPTION == 0 )
 		{
 			/* If we are not using preemption we keep forcing a task switch to
@@ -3580,7 +3525,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 			taskYIELD();
 		}
 		#endif /* configUSE_PREEMPTION */
-		/* 如果定义了抢占式调度且定义了空闲任务让出CPU的执行权 */
+
 		#if ( ( configUSE_PREEMPTION == 1 ) && ( configIDLE_SHOULD_YIELD == 1 ) )
 		{
 			/* When using preemption tasks of equal priority will be
@@ -3592,10 +3537,9 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 			the list, and an occasional incorrect value will not matter.  If
 			the ready list at the idle priority contains more than one task
 			then a task other than the idle task is ready to execute. */
-			/* 如果有同空闲任务同优先级的任务准备就绪 */
 			if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ tskIDLE_PRIORITY ] ) ) > ( UBaseType_t ) 1 )
 			{
-				taskYIELD();	//让出CPU的使用权 执行上下文切换
+				taskYIELD();
 			}
 			else
 			{
@@ -3603,7 +3547,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 			}
 		}
 		#endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configIDLE_SHOULD_YIELD == 1 ) ) */
-		/* 如果定义了空闲任务钩子函数 */
+
 		#if ( configUSE_IDLE_HOOK == 1 )
 		{
 			extern void vApplicationIdleHook( void );
@@ -3613,7 +3557,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 			without the overhead of a separate task.
 			NOTE: vApplicationIdleHook() MUST NOT, UNDER ANY CIRCUMSTANCES,
 			CALL A FUNCTION THAT MIGHT BLOCK. */
-			vApplicationIdleHook(); 	//执行空闲任务钩子函数
+			vApplicationIdleHook();
 		}
 		#endif /* configUSE_IDLE_HOOK */
 
@@ -3621,7 +3565,6 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 		to 1.  This is to ensure portSUPPRESS_TICKS_AND_SLEEP() is called when
 		user defined low power mode	implementations require
 		configUSE_TICKLESS_IDLE to be set to a value other than 1. */
-		/* 如果定义了低功耗模式 */
 		#if ( configUSE_TICKLESS_IDLE != 0 )
 		{
 		TickType_t xExpectedIdleTime;
@@ -3631,27 +3574,27 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 			test of the expected idle time is performed without the
 			scheduler suspended.  The result here is not necessarily
 			valid. */
-			xExpectedIdleTime = prvGetExpectedIdleTime();	//获取空闲时间
-			/* 至少要保证空闲时钟节拍数大于configEXPECTED_IDLE_TIME_BEFORE_SLEEP */
+			xExpectedIdleTime = prvGetExpectedIdleTime();
+
 			if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
 			{
-				vTaskSuspendAll();	//挂起调度器
+				vTaskSuspendAll();
 				{
 					/* Now the scheduler is suspended, the expected idle
 					time can be sampled again, and this time its value can
 					be used. */
 					configASSERT( xNextTaskUnblockTime >= xTickCount );
-					xExpectedIdleTime = prvGetExpectedIdleTime();	//再次获取系统空闲时间
+					xExpectedIdleTime = prvGetExpectedIdleTime();
 
 					/* Define the following macro to set xExpectedIdleTime to 0
 					if the application does not want
 					portSUPPRESS_TICKS_AND_SLEEP() to be called. */
 					configPRE_SUPPRESS_TICKS_AND_SLEEP_PROCESSING( xExpectedIdleTime );
-					/* 再次判断空闲时间大于等于configEXPECTED_IDLE_TIME_BEFORE_SLEEP */
+
 					if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
 					{
 						traceLOW_POWER_IDLE_BEGIN();
-						portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime );	//让系统进入低功耗模式
+						portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime );
 						traceLOW_POWER_IDLE_END();
 					}
 					else
@@ -3659,7 +3602,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 						mtCOVERAGE_TEST_MARKER();
 					}
 				}
-				( void ) xTaskResumeAll();	//恢复调度器
+				( void ) xTaskResumeAll();
 			}
 			else
 			{
@@ -4068,25 +4011,17 @@ static void prvCheckTasksWaitingTermination( void )
 
 #endif /* INCLUDE_vTaskDelete */
 /*-----------------------------------------------------------*/
-/***********************************************************************
-* 函数名称： prvResetNextTaskUnblockTime
-* 函数功能： 重置下一个需要解除阻塞的时间
-* 输入参数： 无
-* 返 回 值： 无
-* 函数说明： 当系统节拍中断计数xTickCount溢出时，会交换延时列表 然后调用此函数
-****************************************************************************/
 
 static void prvResetNextTaskUnblockTime( void )
 {
 TCB_t *pxTCB;
-	/* 判断延时列表是否为空 */
+
 	if( listLIST_IS_EMPTY( pxDelayedTaskList ) != pdFALSE )
 	{
 		/* The new current delayed list is empty.  Set xNextTaskUnblockTime to
 		the maximum possible value so it is	extremely unlikely that the
 		if( xTickCount >= xNextTaskUnblockTime ) test will pass until
 		there is an item in the delayed list. */
-		/* 如果当前延时列表为空 则说明存在xTickCount溢出的情况 所以下一个任务唤醒时间更新为最大值 */
 		xNextTaskUnblockTime = portMAX_DELAY;
 	}
 	else
@@ -4095,7 +4030,6 @@ TCB_t *pxTCB;
 		the item at the head of the delayed list.  This is the time at
 		which the task at the head of the delayed list should be removed
 		from the Blocked state. */
-		/* 延时列表时按照时间顺序排列 所以取出头节点的值更新之 */
 		( pxTCB ) = listGET_OWNER_OF_HEAD_ENTRY( pxDelayedTaskList ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
 		xNextTaskUnblockTime = listGET_LIST_ITEM_VALUE( &( ( pxTCB )->xStateListItem ) );
 	}
@@ -5352,14 +5286,6 @@ TickType_t uxReturn;
 #endif /* configUSE_TASK_NOTIFICATIONS */
 /*-----------------------------------------------------------*/
 
-/***********************************************************************
-* 函数名称： prvAddCurrentTaskToDelayedList
-* 函数功能： 将当前任务加入到延时列表中去
-* 输入参数： xTicksToWait[IN]: 延时节拍数
-			 xCanBlockIndefinitely[IN]:是否可以无限期阻塞
-* 返 回 值： 无
-* 函数说明： 
-****************************************************************************/
 
 static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait, const BaseType_t xCanBlockIndefinitely )
 {
@@ -5402,7 +5328,7 @@ const TickType_t xConstTickCount = xTickCount;
 			/* Calculate the time at which the task should be woken if the event
 			does not occur.  This may overflow but this doesn't matter, the
 			kernel will manage it correctly. */
-			xTimeToWake = xConstTickCount + xTicksToWait; //真正的唤醒时间是当前任务的延时节拍数+系统节拍数
+			xTimeToWake = xConstTickCount + xTicksToWait;
 
 			/* The list item will be inserted in wake time order. */
 			listSET_LIST_ITEM_VALUE( &( pxCurrentTCB->xStateListItem ), xTimeToWake );
@@ -5411,7 +5337,6 @@ const TickType_t xConstTickCount = xTickCount;
 			{
 				/* Wake time has overflowed.  Place this item in the overflow
 				list. */
-				/* 如果唤醒时间溢出 */
 				vListInsert( pxOverflowDelayedTaskList, &( pxCurrentTCB->xStateListItem ) );
 			}
 			else

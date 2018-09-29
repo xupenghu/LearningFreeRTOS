@@ -146,13 +146,6 @@ configIDLE_TASK_NAME in FreeRTOSConfig.h. */
 	} /* taskRECORD_READY_PRIORITY */
 
 	/*-----------------------------------------------------------*/
-	/***********************************************************************
-	* 函数名称： taskSELECT_HIGHEST_PRIORITY_TASK
-	* 函数功能： 找到优先级最高的就绪任务
-	* 输入参数： 无
-	* 返 回 值： 无
-	* 函数说明： 这其实是一个宏定义 uxTopPriority记录了当前
-	****************************************************************************/
 
 	#define taskSELECT_HIGHEST_PRIORITY_TASK()															\
 	{																									\
@@ -3569,8 +3562,8 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 	{
 		/* See if any tasks have deleted themselves - if so then the idle task
 		is responsible for freeing the deleted task's TCB and stack. */
-		prvCheckTasksWaitingTermination();	//检查是否有被删除的任务 回收内存空间
-		/* 如果没有定义抢占式调度*/
+		prvCheckTasksWaitingTermination();
+
 		#if ( configUSE_PREEMPTION == 0 )
 		{
 			/* If we are not using preemption we keep forcing a task switch to
@@ -3580,7 +3573,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 			taskYIELD();
 		}
 		#endif /* configUSE_PREEMPTION */
-		/* 如果定义了抢占式调度且定义了空闲任务让出CPU的执行权 */
+
 		#if ( ( configUSE_PREEMPTION == 1 ) && ( configIDLE_SHOULD_YIELD == 1 ) )
 		{
 			/* When using preemption tasks of equal priority will be
@@ -3592,10 +3585,9 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 			the list, and an occasional incorrect value will not matter.  If
 			the ready list at the idle priority contains more than one task
 			then a task other than the idle task is ready to execute. */
-			/* 如果有同空闲任务同优先级的任务准备就绪 */
 			if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ tskIDLE_PRIORITY ] ) ) > ( UBaseType_t ) 1 )
 			{
-				taskYIELD();	//让出CPU的使用权 执行上下文切换
+				taskYIELD();
 			}
 			else
 			{
@@ -3603,7 +3595,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 			}
 		}
 		#endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configIDLE_SHOULD_YIELD == 1 ) ) */
-		/* 如果定义了空闲任务钩子函数 */
+
 		#if ( configUSE_IDLE_HOOK == 1 )
 		{
 			extern void vApplicationIdleHook( void );
@@ -3613,7 +3605,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 			without the overhead of a separate task.
 			NOTE: vApplicationIdleHook() MUST NOT, UNDER ANY CIRCUMSTANCES,
 			CALL A FUNCTION THAT MIGHT BLOCK. */
-			vApplicationIdleHook(); 	//执行空闲任务钩子函数
+			vApplicationIdleHook();
 		}
 		#endif /* configUSE_IDLE_HOOK */
 
@@ -3621,7 +3613,6 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 		to 1.  This is to ensure portSUPPRESS_TICKS_AND_SLEEP() is called when
 		user defined low power mode	implementations require
 		configUSE_TICKLESS_IDLE to be set to a value other than 1. */
-		/* 如果定义了低功耗模式 */
 		#if ( configUSE_TICKLESS_IDLE != 0 )
 		{
 		TickType_t xExpectedIdleTime;
@@ -3631,27 +3622,27 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 			test of the expected idle time is performed without the
 			scheduler suspended.  The result here is not necessarily
 			valid. */
-			xExpectedIdleTime = prvGetExpectedIdleTime();	//获取空闲时间
-			/* 至少要保证空闲时钟节拍数大于configEXPECTED_IDLE_TIME_BEFORE_SLEEP */
+			xExpectedIdleTime = prvGetExpectedIdleTime();
+
 			if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
 			{
-				vTaskSuspendAll();	//挂起调度器
+				vTaskSuspendAll();
 				{
 					/* Now the scheduler is suspended, the expected idle
 					time can be sampled again, and this time its value can
 					be used. */
 					configASSERT( xNextTaskUnblockTime >= xTickCount );
-					xExpectedIdleTime = prvGetExpectedIdleTime();	//再次获取系统空闲时间
+					xExpectedIdleTime = prvGetExpectedIdleTime();
 
 					/* Define the following macro to set xExpectedIdleTime to 0
 					if the application does not want
 					portSUPPRESS_TICKS_AND_SLEEP() to be called. */
 					configPRE_SUPPRESS_TICKS_AND_SLEEP_PROCESSING( xExpectedIdleTime );
-					/* 再次判断空闲时间大于等于configEXPECTED_IDLE_TIME_BEFORE_SLEEP */
+
 					if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
 					{
 						traceLOW_POWER_IDLE_BEGIN();
-						portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime );	//让系统进入低功耗模式
+						portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime );
 						traceLOW_POWER_IDLE_END();
 					}
 					else
@@ -3659,7 +3650,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 						mtCOVERAGE_TEST_MARKER();
 					}
 				}
-				( void ) xTaskResumeAll();	//恢复调度器
+				( void ) xTaskResumeAll();
 			}
 			else
 			{
