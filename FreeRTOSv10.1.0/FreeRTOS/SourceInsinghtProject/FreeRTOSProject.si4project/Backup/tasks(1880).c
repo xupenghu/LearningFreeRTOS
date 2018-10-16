@@ -151,7 +151,7 @@ configIDLE_TASK_NAME in FreeRTOSConfig.h. */
 	* 函数功能： 找到优先级最高的就绪任务
 	* 输入参数： 无
 	* 返 回 值： 无
-	* 函数说明： 这其实是一个宏定义 uxTopPriority记录了当前最高优先级
+	* 函数说明： 这其实是一个宏定义 uxTopPriority记录了当前
 	****************************************************************************/
 
 	#define taskSELECT_HIGHEST_PRIORITY_TASK()															\

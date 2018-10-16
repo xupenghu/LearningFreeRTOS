@@ -1042,7 +1042,7 @@ Queue_t * const pxQueue = xQueue;
 		else
 		{
 			/* The timeout has expired. */
-			/* 超时时间到期 队列任然满 解除调度锁 返回错误码 */
+			/* 超时时间到期 队列任然满 接触调度锁 返回错误码 */
 			prvUnlockQueue( pxQueue );
 			( void ) xTaskResumeAll();
 

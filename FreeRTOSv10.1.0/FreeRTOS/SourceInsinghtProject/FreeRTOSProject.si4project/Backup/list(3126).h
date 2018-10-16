@@ -153,9 +153,9 @@ typedef struct xLIST_ITEM ListItem_t;					/* For some reason lint wants this as 
 struct xMINI_LIST_ITEM
 {
 	listFIRST_LIST_ITEM_INTEGRITY_CHECK_VALUE			/*< Set to a known value if configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES is set to 1. */
-	configLIST_VOLATILE TickType_t xItemValue;			/* 列表项值*/
-	struct xLIST_ITEM * configLIST_VOLATILE pxNext;		/* 指向列表中的下一个列表项 */
-	struct xLIST_ITEM * configLIST_VOLATILE pxPrevious;	/* 指向列表中的上一个列表项 */
+	configLIST_VOLATILE TickType_t xItemValue;
+	struct xLIST_ITEM * configLIST_VOLATILE pxNext;
+	struct xLIST_ITEM * configLIST_VOLATILE pxPrevious;
 };
 typedef struct xMINI_LIST_ITEM MiniListItem_t;
 
