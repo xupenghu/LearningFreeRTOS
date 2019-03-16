@@ -1,5 +1,6 @@
 # LearningFreeRTOS
-这是一个在学习和开发FreeRTOS的过程中的记录和总结
+在使用FreeRTOS的过程中，我发现没有相关资料来注释Free RTOS，所以就在学习和使用的过程中，给Free RTOS做了个中文注释，关键代码都已经做了相关注释，方便大家理解和使用Free RTOS。
+
 
 ## 快速开始
 1. FreeRTOSv10.1.0目录包含了FreeRTOS的全部源码，其中./FreeRTOSv10.1.0/FreeRTOS/SourceInsinghtProject/FreeRTOSProject.si4project
